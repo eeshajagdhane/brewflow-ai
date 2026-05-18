@@ -1,0 +1,147 @@
+name: Milestone 04
+on: [push, pull_request]
+
+jobs:
+  check-content:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: README.md has been rewritten for your project
+        run: |
+          if [ ! -f README.md ]; then
+            echo "FAIL: README.md is missing."
+            exit 1
+          fi
+          # The template ships a sentinel sentence in the first paragraph.
+          # If it's still there, the team hasn't replaced the template README.
+          if grep -q "This is the \*\*starter template\*\* for Milestone 04" README.md; then
+            echo "FAIL: README.md still contains the milestone04 template intro."
+            echo "Expected: rewrite README.md to describe YOUR project — the"
+            echo "AI coworker, the workflow, the UI, the human review plan,"
+            echo "and how to run everything."
+            exit 1
+          fi
+          echo "OK: README.md has been edited beyond the template."
+
+      - name: skills/ has at least one skill with a SKILL.md
+        run: |
+          shopt -s nullglob
+          found=0
+          for skill_md in skills/*/SKILL.md; do
+            name="$(basename "$(dirname "$skill_md")")"
+            echo "OK: skill '$name' at $skill_md"
+            found=$((found + 1))
+          done
+          if [ "$found" -eq 0 ]; then
+            echo ""
+            echo "FAIL: no skill found under skills/ (any folder containing SKILL.md)."
+            echo "Expected: at least one skills/<name>/SKILL.md."
+            exit 1
+          fi
+
+      - name: mcp_servers/ has at least one student MCP server
+        run: |
+          shopt -s nullglob
+          found=0
+          for f in mcp_servers/*.py; do
+            base="$(basename "$f")"
+            if [ "$base" = "__init__.py" ] || [ "$base" = "example_server.py" ]; then
+              continue
+            fi
+            echo "OK: mcp server file '$f'"
+            found=$((found + 1))
+          done
+          if [ "$found" -eq 0 ]; then
+            echo ""
+            echo "FAIL: no student MCP server under mcp_servers/."
+            echo "Expected: at least one mcp_servers/<your_server>.py"
+            echo "(in addition to or replacing the template example_server.py)."
+            exit 1
+          fi
+
+      - name: rag/knowledge_base/ has student documents
+        run: |
+          shopt -s nullglob
+          found=0
+          for f in rag/knowledge_base/*; do
+            base="$(basename "$f")"
+            if [ "$base" = "EXAMPLE.md" ] || [ "$base" = ".gitkeep" ]; then
+              continue
+            fi
+            [ -f "$f" ] || continue
+            echo "OK: kb doc '$f'"
+            found=$((found + 1))
+          done
+          if [ "$found" -eq 0 ]; then
+            echo ""
+            echo "FAIL: no student documents under rag/knowledge_base/."
+            echo "Expected: at least one document beyond the template EXAMPLE.md."
+            exit 1
+          fi
+
+      - name: rag/retrieval.py has been implemented
+        run: |
+          if [ ! -f rag/retrieval.py ]; then
+            echo "FAIL: rag/retrieval.py is missing."
+            exit 1
+          fi
+          if grep -q "TODO: implement" rag/retrieval.py; then
+            echo "FAIL: rag/retrieval.py still contains the stub TODO marker."
+            echo "Expected: implement retrieve(query, top_k) so it returns relevant"
+            echo "chunks from rag/knowledge_base/ (keyword or vector — see rag/README.md)."
+            exit 1
+          fi
+          echo "OK: rag/retrieval.py has been implemented."
+
+      - name: ui/ has student UI code (not just the README)
+        run: |
+          shopt -s nullglob
+          found=0
+          for f in ui/*.py ui/**/*.py ui/*.html ui/**/*.html ui/*.js ui/**/*.js; do
+            [ -f "$f" ] || continue
+            echo "OK: UI file '$f'"
+            found=$((found + 1))
+          done
+          if [ "$found" -eq 0 ]; then
+            echo ""
+            echo "FAIL: no UI source files found under ui/."
+            echo "Expected: at least one .py/.html/.js file implementing the M04 UI"
+            echo "(see ui/README.md for the four required screens)."
+            exit 1
+          fi
+
+      - name: M04 deliverable docs exist and are not still the template
+        run: |
+          missing=0
+          for f in human_review_plan.md evidence_and_sources.md estimates.md failure_cases.md test_report.md; do
+            if [ ! -f "$f" ]; then
+              echo "FAIL: $f is missing."
+              missing=$((missing + 1))
+            fi
+          done
+          [ "$missing" -eq 0 ] || exit 1
+          # Each stub doc carries a placeholder marker — fail if it's still there.
+          if grep -q "*(add row 3)*" human_review_plan.md; then
+            echo "FAIL: human_review_plan.md still has template placeholder rows."
+            exit 1
+          fi
+          if grep -q "*(add row 4)*" failure_cases.md; then
+            echo "FAIL: failure_cases.md still has template placeholder rows."
+            exit 1
+          fi
+          echo "OK: M04 deliverable docs filled in."
+
+      - name: tests/test_workflow.py has been customized
+        run: |
+          if [ ! -f tests/test_workflow.py ]; then
+            echo "FAIL: tests/test_workflow.py is missing."
+            exit 1
+          fi
+          if grep -q "Wire run_workflow() to your actual orchestrator" tests/test_workflow.py; then
+            echo "FAIL: tests/test_workflow.py still contains the run_workflow() stub."
+            echo "Expected: replace run_workflow() with a real call into your"
+            echo "orchestrator and replace the example TEST_CASES with 8-12 real cases."
+            exit 1
+          fi
+          echo "OK: tests/test_workflow.py has been customized."
