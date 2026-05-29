@@ -1,6 +1,164 @@
-# Milestone 04 — Student template
+# BrewFlow AI — Starbucks Branch Daily Operations and Order Fulfillment
 
-This is the **starter template** for Milestone 04 of MGT 449 / MGTA 495. It
+> **Milestone 04 — Group 8 | MGTA 495 GenAI for Business**
+
+BrewFlow AI is a live role-based AI operations console for a simulated Starbucks branch.
+All outputs are generated from real CSV data and deterministic logic — **no canned demo responses**.
+
+---
+
+## What BrewFlow AI Does
+
+| Role | Task | How |
+|---|---|---|
+| Manager | Pre-rush readiness check | `run_manager_readiness()` → automations + RAG |
+| Barista | Inventory-aware drink recommendation | `run_barista_recommendation()` → MCP tools + RAG |
+| Customer / Barista | Order building and validation | `run_order_builder()` → `build_and_validate_order` |
+| All | Order confirmation | `order_summary` skill → RAG confirmation SOP |
+| All | Human review and audit | Evidence package + review queue |
+
+---
+
+## The Connected Workflow
+
+```
+Manager Readiness (detect_rush → staffing → inventory → briefing)
+         ↓ barista_guidance
+Barista Recommendation (search_menu → check_inventory → RAG guidance)
+         ↓ top_candidates + selected_item
+Order Builder (parse order → validate → missing fields → follow-up)
+         ↓ structured_order
+Order Summary (customer confirmation + barista prep note)
+         ↓
+Human Review (evidence_package + review_queue + approve/edit/reject/escalate)
+```
+
+---
+
+## What is a Skill vs Automation vs MCP Tool vs RAG Document?
+
+| Component | Where | What it does |
+|---|---|---|
+| **Skill** | `skills/*/SKILL.md` | AI instruction document — teaches the model how to use tools + evidence to respond to a user. Conversational, judgment-heavy. |
+| **Automation** | `automations/*/run_*.py` | Deterministic Python — no LLM. Reads CSVs, calculates thresholds, returns structured data. |
+| **MCP Tool** | `mcp_servers/brewflow_mcp_server.py` | Callable Python function with JSON I/O. Bridges automations and menu data for the orchestrator. |
+| **RAG Document** | `rag/knowledge_base/*.md` | Simulated internal SOP / policy / training guide. Retrieved by keyword scoring. |
+
+---
+
+## Folder Structure
+
+| Folder | Contents |
+|---|---|
+| `data/raw/` | 9 finalized CSV files — read only, never modified |
+| `utils/` | data_loader, menu_matching, inventory_matching, workflow_common, evidence, **face_validity** (M04) |
+| `automations/` | 4 deterministic automations (inventory, staffing, demand, briefing) |
+| `mcp_servers/` | brewflow_mcp_server.py (6 tools) + example_server.py (reference) |
+| `rag/knowledge_base/` | 12 SOP/policy documents + EXAMPLE.md (reference) |
+| `rag/retrieval.py` | Deterministic keyword retrieval — no API keys |
+| `skills/` | 5 SKILL.md files (product_catalog, recommendation, order_builder, order_summary, workflow_orchestrator) |
+| `scripts/orchestrator.py` | 4 workflow functions returning UI-ready JSON (each carries a `face_validity` object) |
+| `tests/` | Local tests — no API keys required |
+| `ui/` | **Flask Operations Console (M04)** — `app.py`, `templates/`, `static/`. Six tabs over the live orchestrator. |
+
+> **Face validity (Milestone 04):** Every orchestrator response now includes
+> a top-level `face_validity` object — a deterministic, rule-based
+> plausibility check assembled from the existing `evidence_package`,
+> `review_queue`, `warnings`, and `user_input`. Face validity is an
+> evaluation/review layer (lives in `utils/face_validity.py`), **not** a
+> skill, MCP tool, or RAG tool. The future UI will render this in the
+> Evidence Center and Review Queue. See [`face_validity.md`](face_validity.md).
+
+---
+
+## How to Run the UI (Operations Console)
+
+```bash
+uv sync
+uv run python ui/app.py            # http://127.0.0.1:5000
+```
+
+> **Simulated branch, not real Starbucks operations.** The UI uses the
+> public Starbucks menu plus simulated operational CSVs (inventory,
+> staffing, sales forecast, orders, promotions). It is not connected to
+> any proprietary Starbucks data or system.
+
+The console has six tabs (**Full Workflow** — main demo path — plus
+Manager, Barista, Order Builder, Evidence Center, Review Queue) and an
+always-visible Audit Log footer. Every workflow call goes live to
+`scripts/orchestrator.py`. See [`ui/README.md`](ui/README.md) for full
+view-by-view docs.
+
+## How to Run Tests
+
+```bash
+uv run pytest tests/test_mcp_tools.py tests/test_rag_retrieval.py \
+  tests/test_brewflow_workflow.py tests/test_face_validity.py \
+  tests/test_ui_routes.py -v
+```
+
+## How to Run the Orchestrator from Python
+
+```python
+from scripts.orchestrator import run_manager_readiness, run_full_workflow
+
+# Pre-shift readiness check
+result = run_manager_readiness("SD001", "2024-01-15", 8)
+print(result["final_output"]["readiness_summary"])
+print(result["final_output"]["recommended_actions"])
+
+# Full workflow
+result = run_full_workflow(
+    store_id="SD001", date="2024-01-15", hour=8,
+    customer_request="something cold and sweet",
+    raw_order="Grande iced caramel macchiato with oat milk",
+    preferences={"temperature": "cold"},
+)
+print(result["status"], len(result["steps"]))
+```
+
+---
+
+## Milestone 02 Coverage
+
+| Deliverable | File |
+|---|---|
+| product_catalog skill | `skills/product_catalog/SKILL.md` |
+| recommendation skill | `skills/recommendation/SKILL.md` |
+| order_builder skill | `skills/order_builder/SKILL.md` |
+| order_summary skill | `skills/order_summary/SKILL.md` |
+| inventory_monitoring automation | `automations/inventory_monitoring/run_inventory_monitoring.py` |
+| staffing_gap_calculator automation | `automations/staffing_gap_calculator/run_staffing_gap_calculator.py` |
+| demand_rush_detection automation | `automations/demand_rush_detection/run_demand_rush_detection.py` |
+| manager_daily_briefing automation | `automations/manager_daily_briefing/run_manager_daily_briefing.py` |
+
+## Milestone 03 Coverage
+
+| Deliverable | File |
+|---|---|
+| Connected workflow chain | `scripts/orchestrator.py` (4 functions) |
+| `get_menu_item_info` MCP tool | `mcp_servers/brewflow_mcp_server.py` |
+| `search_menu_by_preferences` MCP tool | `mcp_servers/brewflow_mcp_server.py` |
+| `check_inventory_status` MCP tool | `mcp_servers/brewflow_mcp_server.py` |
+| `detect_rush_period` MCP tool | `mcp_servers/brewflow_mcp_server.py` |
+| `calculate_staffing_gap` MCP tool | `mcp_servers/brewflow_mcp_server.py` |
+| `build_and_validate_order` MCP tool | `mcp_servers/brewflow_mcp_server.py` |
+| RAG retrieval | `rag/retrieval.py` + 12 docs in `rag/knowledge_base/` |
+| Workflow handoffs | `scripts/orchestrator.py::run_full_workflow()` |
+
+---
+
+## Notes
+
+- UI will be built later in `ui/` — not part of this milestone.
+- All outputs are generated from live data/functions — no canned demo responses.
+- Professor starter examples (`mcp_servers/example_server.py`, `rag/knowledge_base/EXAMPLE.md`,
+  `.claude/commands/`) are preserved as reference-only.
+- `tests/test_workflow.py` (DeepEval) and `tests/utils/` (OAuth) require API keys — run with `-m integration`.
+
+---
+
+# Milestone 04 — Course Template (Preserved for Reference) It
 builds on the Milestone 03 template (skills, MCP tools, RAG) and adds the
 pieces specific to M04: a real user interface, an explicit human-review
 plan, evidence/source displays, time/cost/quality reasoning, predicted

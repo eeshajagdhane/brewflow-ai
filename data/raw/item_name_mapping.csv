@@ -1,0 +1,34 @@
+source_item_name,canonical_menu_item,source_file,match_type,confidence,notes
+Blueberry Muffin,Blueberry Muffin,both,exact_match,high,Exact name match in menu.
+Butter Croissant,Butter Croissant,both,exact_match,high,Exact name match in menu.
+Caffe Americano,Caffe Americano,both,exact_match,high,Exact name match in menu.
+Caffe Latte,Caffe Latte,both,exact_match,high,Exact name match in menu.
+Cappuccino,Cappuccino,both,exact_match,high,Exact name match in menu.
+Caramel Frappuccino,Caramel Frappuccino,both,exact_match,high,Exact name match in menu.
+Caramel Macchiato,Caramel Macchiato,both,exact_match,high,Exact name match in menu.
+Chai Tea Latte,Chai Tea Latte,both,exact_match,high,Exact name match in menu.
+Cold Brew Coffee,Cold Brew Coffee,both,exact_match,high,Exact name match in menu.
+Flat White,Flat White,both,exact_match,high,Exact name match in menu.
+Iced Caramel Macchiato,Iced Caramel Macchiato,both,exact_match,high,Exact name match in menu.
+Iced Chai Tea Latte,Iced Chai Tea Latte,both,exact_match,high,Exact name match in menu.
+Iced Matcha Tea Latte,Iced Matcha Tea Latte,both,exact_match,high,Exact name match in menu.
+Java Chip Frappuccino,Java Chip Frappuccino,both,exact_match,high,Exact name match in menu.
+Mango Dragonfruit Refresher,Mango Dragonfruit Refresher,both,exact_match,high,Exact name match in menu.
+Matcha Tea Latte,Matcha Tea Latte,both,exact_match,high,Exact name match in menu.
+Mocha Frappuccino,Mocha Frappuccino,both,exact_match,high,Exact name match in menu.
+Nitro Cold Brew,Nitro Cold Brew,both,exact_match,high,Exact name match in menu.
+Pink Drink,Pink Drink,both,exact_match,high,Exact name match in menu.
+Pumpkin Spice Latte,Pumpkin Spice Latte,both,exact_match,high,Exact name match in menu.
+Strawberry Acai Refresher,Strawberry Acai Refresher,both,exact_match,high,Exact name match in menu.
+Iced Latte,Iced Caffe Latte,both,manual_match,high,Shortened colloquial name; official menu item is Iced Caffe Latte.
+Iced Americano,Iced Caffe Americano,both,manual_match,high,Shortened colloquial name; official menu item is Iced Caffe Americano.
+Blonde Roast,Featured Blonde Roast,both,manual_match,high,Shortened name; official menu item is Featured Blonde Roast.
+Pike Place Roast,Pike Place Roast (Medium),both,manual_match,high,Simulated data drops size qualifier; closest official item is Pike Place Roast (Medium).
+Vanilla Latte,Caffe Latte,both,customized_base,high,Vanilla Latte is a Caffe Latte with vanilla syrup added. No standalone Vanilla Latte SKU in menu. Blonde Vanilla Latte exists as a separate item if blonde espresso is intended.
+Vanilla Bean Frappuccino,Vanilla Bean Creme Frappuccino,both,manual_match,high,Common short name mapped to official menu item.
+Cake Pop,Birthday Cake Pop,both,fuzzy_match,medium,"Generic 'Cake Pop' has multiple SKUs (Birthday, Chocolate, Cookies & Cream, Polar Bear). Defaulting to Birthday Cake Pop as most common. Downstream code should disambiguate."
+Chocolate Cookie,Chocolate Chip Cookie,both,fuzzy_match,medium,No exact 'Chocolate Cookie' in menu; closest match is Chocolate Chip Cookie.
+Bacon Gouda Sandwich,Bacon Gouda & Egg Breakfast Sandwich,both,manual_match,high,Shortened name; official menu item is Bacon Gouda & Egg Breakfast Sandwich.
+Spinach Feta Wrap,Spinach Feta & Egg White Wrap,both,manual_match,high,Shortened name; official menu item is Spinach Feta & Egg White Wrap.
+Turkey Sandwich,Turkey Provolone & Pesto on Ciabatta,both,fuzzy_match,medium,Two turkey options in menu. Defaulting to Turkey Provolone & Pesto on Ciabatta (lunch). Turkey Bacon Cheddar & Egg White Sandwich is the breakfast variant.
+Protein Box,Eggs & Cheddar Protein Box,both,fuzzy_match,low,Multiple protein box SKUs exist. Cannot determine specific variant from name alone. Defaulting to Eggs & Cheddar Protein Box. Downstream code should disambiguate.

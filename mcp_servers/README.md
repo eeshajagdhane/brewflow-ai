@@ -1,5 +1,25 @@
 # `mcp_servers/`
 
+> **BrewFlow AI — Active MCP Server:** `brewflow_mcp_server.py` (6 tools).
+> `example_server.py` is the course template starter — reference-only.
+
+## BrewFlow MCP Tools (brewflow_mcp_server.py)
+
+All 6 tools are plain callable Python functions — no MCP runtime required for the orchestrator or tests.
+
+| Tool | Purpose | Workflow Step |
+|---|---|---|
+| `get_menu_item_info(item_name)` | Full menu lookup with ambiguity handling | product_catalog, recommendation, order_builder |
+| `search_menu_by_preferences(prefs, store_id, date, hour)` | Ranked candidates with inventory + promo scoring | recommendation |
+| `check_inventory_status(store_id, date, ingredients)` | Per-ingredient availability, latest-prior fallback | recommendation, order_builder |
+| `detect_rush_period(store_id, date, hour)` | Demand level and rush risk from sales forecast | manager_readiness, recommendation |
+| `calculate_staffing_gap(store_id, date, hour)` | Staffing shortfall and risk | manager_readiness |
+| `build_and_validate_order(raw_order, store_id, date)` | Parse natural-language order; detect missing fields; flag allergy | order_builder |
+
+See `brewflow_mcp_server.py` docstrings for full input/output specs.
+
+---
+
 The **Model Context Protocol** (MCP) is an open standard for letting a
 GenAI model invoke tools, read resources, and call functions through a
 consistent interface. You write a server that publishes a list of tools the

@@ -1,0 +1,1 @@
+"""Staffing gap calculator automation."""

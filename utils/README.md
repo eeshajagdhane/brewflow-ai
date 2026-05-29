@@ -1,5 +1,32 @@
 # `utils/`
 
+> **BrewFlow AI — Active Utils:** 6 modules. See table below.
+> The course template connect.py / oauth_gpt.py are preserved as reference.
+
+## BrewFlow Utility Modules
+
+| File | Purpose |
+|---|---|
+| `data_loader.py` | Load all 9 CSVs from `data/raw/` via pandas. Includes `validate_required_data_files()`. |
+| `menu_matching.py` | Item name resolution via `item_name_mapping.csv`. Handles ambiguous names. |
+| `inventory_matching.py` | Ingredient → inventory mapping + latest-prior snapshot fallback. |
+| `workflow_common.py` | `make_step`, `make_audit_entry`, `make_tool_response`, `make_workflow_response`. |
+| `evidence.py` | `build_evidence_package`, `evidence_quality_score`, `summarize_evidence_for_review`. |
+| `face_validity.py` | `generate_face_validity_check` — deterministic plausibility/review layer (M04). |
+
+> **Face validity is an evaluation/review layer — not a skill, MCP tool, or
+> RAG tool.** `generate_face_validity_check()` reads the artifacts the
+> orchestrator has already built (`final_output`, `evidence_package`,
+> `warnings`, `review_queue`, `assumptions`, `user_input`) and returns a
+> structured `{status, confidence, supporting_reasons, concerns,
+> human_review_required, evidence_quality, anchors_used, recommended_action}`
+> object. Every workflow response in `scripts/orchestrator.py` attaches this
+> as `response["face_validity"]` so the future UI can render a Face Validity
+> card in the Evidence Center and tag entries in the Review Queue. No LLM
+> calls; no external services.
+
+---
+
 Shared helpers used by every skill, automation, and the orchestrator.
 
 This folder ships with **one** helper already wired up:

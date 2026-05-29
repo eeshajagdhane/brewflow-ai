@@ -1,28 +1,13 @@
 # Predicted Failure Cases
 
-List **at least 5 realistic ways** your AI coworker or workflow could
-fail. Focus on practical failures, not abstract risks.
-
-Examples to draw from:
-
-- Missing data
-- Conflicting sources
-- Wrong document retrieved
-- Incorrect classification
-- Bad recommendation
-- Output is too generic
-- User skips review
-- Tool or API fails
-- AI produces a result that looks polished but is not supported by evidence
-- The process is faster but less accurate
+Failures FC-01 and FC-04 are directly tested in `tests/test_workflow.py` via DeepEval cases TC-07 and TC-09.
 
 | Failure case | Why it might happen | Business consequence | How the user would notice | How your process handles it |
 |---|---|---|---|---|
-| *(add row 1)* | | | | |
-| *(add row 2)* | | | | |
-| *(add row 3)* | | | | |
-| *(add row 4)* | | | | |
-| *(add row 5)* | | | | |
-
-At least **2 of these failures** should be the ones you specifically
-test against in `tests/test_workflow.py` (see `tests/README.md`).
+| **FC-01: Item name not resolved** | Customer orders something like "venti soy dirty chai" — the item name after stripping size/milk tokens is "dirty chai", which has no entry in `item_name_mapping.csv` and scores below the menu-search threshold (score < 1) | Order is incomplete; barista cannot prepare a drink; customer waits or gets the wrong item | `item_resolved = False` in the order builder output; `missing_fields = ["item_name"]`; orchestrator sets `review_required = True` | The order builder surfaces the raw order text, the best partial match found (if any), and a list of close menu candidates for the human to pick from; the review screen shows an "Edit order" action |
+| **FC-02: Stale inventory snapshot** | No inventory record exists for the exact requested date; the latest prior snapshot is from 3+ days ago; stock levels have changed since then | Barista recommends a drink whose key ingredient ran out yesterday; customer disappointment and wasted prep time | Evidence shows snapshot date ≠ requested date; `stale_data` warning in `warnings` field; inventory status badge shows the snapshot date | `get_inventory_snapshot()` uses latest-prior fallback and records the actual snapshot date in evidence; if snapshot age > 2 days, `review_required = True` is set on the inventory check step; human can verify with physical stock count |
+| **FC-03: Wrong dietary restriction match** | Customer says "I can't have dairy" but the menu item's `Vegan` flag is the only proxy for dairy-free in the data; a non-vegan item made with oat milk by default is flagged incorrectly | Customer receives a drink with dairy despite the flag; allergic reaction risk for customers with true lactose intolerance | `dairy_free_heuristic` warning appears in output; allergen evidence section shows which fields were checked and the confidence level | The allergen flag is marked as a heuristic in evidence (`"Dairy-free heuristic: Vegan=Yes used as proxy"`); dietary-sensitive orders are always routed through `review_required = True` on the recommendation step so a barista can verify against the physical ingredient label |
+| **FC-04: Rush misclassification due to sparse history** | A store has fewer than 3 historical order rows for the requested store/hour combination (e.g., new store, unusual shift, or holiday); the demand classifier defaults to "Low" | Manager under-prepares: insufficient staff called in, not enough prep items made; long wait times during an actual rush | `low_sample_size` warning in automation output; evidence shows the count of data points used for classification | `run_demand_rush_detection()` counts data points and emits a `low_sample_size` warning when fewer than 3 rows exist; the daily forecast (`daily_sales_forecast.csv`) is used as a secondary signal; if forecast disagrees with history-based classification, the higher demand level wins |
+| **FC-05: Recommendation ignores active promotion** | The promotion-scoring step in `search_menu_by_preferences()` relies on `promotion_margins.csv` having a row matching the exact store, date, and item; if the promotion was added after the last CSV export or references a different item name, it is missed | Customer is not offered a discounted item; revenue and loyalty opportunity lost; barista cannot explain the promotion | Promotion is absent from the ranked candidates; no `is_promoted` flag on the item that should have it | Promotions are included in the evidence package as a separate block listing all active promotions for the store/date; the human reviewer can see all current promotions and manually adjust the recommendation if the AI missed one; barista guidance section in the briefing always lists promotion items explicitly |
+| **FC-06: Order validation passes but prep note is wrong** | Order builder correctly resolves the item and all ingredients are in stock, but the `customizations` field is populated from a free-text fallback rather than a structured field; the order summary renders the customization incorrectly (e.g., "extra shot" stored as a customization note gets dropped from the prep note) | Barista prepares the standard drink; customer receives a drink missing a paid extra; dissatisfaction and potential remake | Customer-facing confirmation looks correct; barista prep note omits the extra shot; discrepancy only noticed when the customer inspects the cup | The order summary skill is instructed (in `SKILL.md`) to render every field in `customizations` as a line in the prep note; if `customizations` is non-empty, `review_required = True` is set so a human can compare the confirmation text to the original raw order before submission |
+| **FC-07: Evidence quality score inflated by low-value matches** | `evidence_quality_score()` awards points for each RAG doc retrieved and each tool output present, regardless of whether the retrieved doc actually supports the specific claim; a workflow that retrieves 3 tangentially relevant docs scores 0.7 (green) even though none address the key question | Human reviewer trusts a high evidence score and approves without checking the actual doc content; a poorly-supported recommendation goes through as if well-evidenced | Evidence score badge shows green (≥ 0.7) but the retrieved snippets are from unrelated sections of the docs | Evidence quality score is shown alongside the individual doc snippets and matched terms so the human can verify relevance directly; the UI Evidence screen highlights matched terms inline so a reviewer can instantly see whether the match is substantive or incidental |

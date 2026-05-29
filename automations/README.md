@@ -1,5 +1,21 @@
 # `automations/`
 
+> **BrewFlow AI — Active Automations** (see folders below for Python files).
+> The course template content below is preserved as reference.
+
+## Active BrewFlow Automations
+
+| Automation | Entry Point | Data Source | Purpose |
+|---|---|---|---|
+| inventory_monitoring | `inventory_monitoring/run_inventory_monitoring.py` | `store_inventory.csv` | Classify each ingredient: low/healthy/overstock/unavailable |
+| staffing_gap_calculator | `staffing_gap_calculator/run_staffing_gap_calculator.py` | `staff_schedule.csv` | Staffing gap and risk for a store/date/hour |
+| demand_rush_detection | `demand_rush_detection/run_demand_rush_detection.py` | `daily_sales_forecast.csv` | Demand level and rush risk lookup |
+| manager_daily_briefing | `manager_daily_briefing/run_manager_daily_briefing.py` | All four CSVs | Combined pre-shift briefing with recommended manager actions |
+
+All automations are deterministic — no LLM calls. Each returns the standard tool response envelope.
+
+---
+
 An **automation** is a deterministic Python step in your workflow — no LLM
 call, no judgement. Examples: look up a customer in a CSV, score keywords,
 fill a template, validate a schema, join tables, audit a run.

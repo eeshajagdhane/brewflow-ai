@@ -1,0 +1,1 @@
+"""Manager daily briefing automation."""

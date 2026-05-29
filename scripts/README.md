@@ -1,5 +1,26 @@
 # `scripts/`
 
+> **BrewFlow AI — Active Orchestrator:** `orchestrator.py` with 4 workflow functions.
+> The course template stub has been replaced with the full BrewFlow implementation.
+
+## BrewFlow Orchestrator Functions
+
+```python
+from scripts.orchestrator import run_manager_readiness, run_barista_recommendation, run_order_builder, run_full_workflow
+
+result = run_manager_readiness("SD001", "2024-01-15", 8)
+result = run_barista_recommendation("SD001", "2024-01-15", 8, "cold sweet drink", {"temperature": "cold"})
+result = run_order_builder("SD001", "2024-01-15", "Grande iced caramel macchiato")
+result = run_full_workflow("SD001", "2024-01-15", 8, "iced drink", raw_order="Grande iced latte")
+```
+
+All functions return UI-ready JSON with: `run_id`, `steps`, `final_output`, `evidence_package`,
+`review_queue`, `review_actions`, `audit_log`, `warnings`.
+
+The future UI (`ui/`) will call these functions directly and render the output.
+
+---
+
 This is where your **orchestrator** lives — the driver that runs your
 skills and automations in sequence, passing each step's JSON envelope to
 the next. Glue scripts (data generation, suite reports, etc.) also live

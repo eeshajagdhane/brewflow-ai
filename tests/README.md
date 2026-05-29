@@ -1,5 +1,29 @@
 # `tests/`
 
+> **BrewFlow AI — Active Tests** (no external API keys required):
+>
+> | File | Coverage |
+> |---|---|
+> | `test_mcp_tools.py` | All 6 MCP tools + data file checks |
+> | `test_rag_retrieval.py` | All 12 KB docs + 4 key query scenarios |
+> | `test_brewflow_workflow.py` | All 4 orchestrator functions + structure checks |
+> | `test_face_validity.py` | Face-validity rules + orchestrator integration (M04) |
+>
+> Run: `uv run pytest tests/test_mcp_tools.py tests/test_rag_retrieval.py tests/test_brewflow_workflow.py tests/test_face_validity.py -v`
+>
+> **Reference-only** (require API keys): `test_workflow.py` (DeepEval), `utils/test_connect.py`, `utils/test_oauth_gpt.py`
+>
+> See `results/test_summary.md` for 12 labeled test case descriptions.
+>
+> **About `test_face_validity.py`** — face validity is an evaluation/review
+> layer (not a skill, MCP tool, or RAG tool) implemented in
+> `utils/face_validity.py`. The tests cover the four headline scenarios
+> (plausible / weak evidence / allergy / missing fields) plus orchestrator
+> integration showing every workflow response now carries a `face_validity`
+> object for the future UI.
+
+---
+
 Two kinds of tests live here:
 
 1. **Unit tests** — same rule as M02/M03. Every Python function gets a

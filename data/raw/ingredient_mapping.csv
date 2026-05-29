@@ -1,0 +1,53 @@
+menu_ingredient_term,inventory_ingredient,mapping_type,required_for_availability,substitution_group,notes
+espresso shots,Espresso Beans,normalized_match,yes,coffee_base,"Espresso drinks require espresso beans. Inventory tracks beans, not pre-pulled shots."
+espresso beans,Espresso Beans,exact_match,yes,coffee_base,Direct match to inventory ingredient.
+blonde espresso,Espresso Beans,normalized_match,yes,coffee_base,Blonde espresso uses a lighter roast; inventory tracks a single espresso beans SKU. Treat as same stock.
+ristretto espresso,Espresso Beans,normalized_match,yes,coffee_base,Ristretto is a shorter pull of espresso; uses same espresso beans inventory.
+reserve espresso,Espresso Beans,normalized_match,yes,coffee_base,Reserve espresso is a premium variant; mapped to espresso beans as no separate reserve SKU tracked.
+brewed coffee,not_tracked,not_tracked,no,coffee_base,Brewed coffee uses roast beans not separately tracked in store_inventory.csv. Treat as always available.
+light roast coffee beans,not_tracked,not_tracked,no,coffee_base,Roast coffee beans are not a tracked inventory ingredient; assume always available.
+medium roast coffee beans,not_tracked,not_tracked,no,coffee_base,Roast coffee beans are not a tracked inventory ingredient; assume always available.
+dark roast coffee beans,not_tracked,not_tracked,no,coffee_base,Roast coffee beans are not a tracked inventory ingredient; assume always available.
+cold brew concentrate,Cold Brew Concentrate,exact_match,yes,coffee_base,Direct match to inventory ingredient. Required for Cold Brew Coffee and Nitro Cold Brew.
+milk,2% Milk,default_assumption,yes,milk,Generic 'milk' in menu defaults to 2% milk per Starbucks standard. Customer can substitute.
+steamed 2% milk,2% Milk,normalized_match,yes,milk,Steamed 2% milk maps directly to 2% Milk in inventory.
+2% milk,2% Milk,exact_match,yes,milk,Direct match to inventory ingredient.
+whole milk,Whole Milk,exact_match,yes,milk,Direct match to inventory ingredient. Used in Flat White by default.
+oat milk,Oat Milk,exact_match,yes,milk,Direct match to inventory ingredient. Common dairy-free substitute.
+almond milk,Almond Milk,exact_match,yes,milk,Direct match to inventory ingredient. Common dairy-free substitute.
+coconut milk,not_tracked,not_tracked,no,milk,Coconut milk is not present in store_inventory.csv. Treat as unavailable for inventory-aware logic.
+nonfat milk,not_tracked,not_tracked,no,milk,Nonfat milk not tracked separately in inventory. Suggest substituting 2% Milk.
+2% milk foam,2% Milk,normalized_match,yes,milk,Milk foam is made from 2% Milk inventory stock.
+vanilla syrup,Vanilla Syrup,exact_match,yes,syrup,Direct match to inventory ingredient.
+sugar-free vanilla syrup,Vanilla Syrup,normalized_match,yes,syrup,Sugar-free variant; mapped to Vanilla Syrup inventory as no separate sugar-free SKU tracked.
+caramel sauce,Caramel Sauce,exact_match,yes,syrup,Direct match to inventory ingredient.
+caramel syrup,Caramel Sauce,normalized_match,yes,syrup,Caramel syrup and caramel sauce are the same inventory SKU in this simulation.
+mocha sauce,Mocha Sauce,exact_match,yes,syrup,Direct match to inventory ingredient.
+hazelnut syrup,Hazelnut Syrup,exact_match,yes,syrup,Direct match to inventory ingredient.
+pumpkin spice syrup,Pumpkin Spice Syrup,exact_match,yes,syrup,Direct match to inventory ingredient. Seasonal item; check stock in fall months.
+cinnamon dolce syrup,not_tracked,not_tracked,no,syrup,Cinnamon dolce syrup not in store_inventory.csv. Treat as not inventory-constrained.
+brown sugar syrup,not_tracked,not_tracked,no,syrup,Brown sugar syrup not tracked in store_inventory.csv.
+white chocolate mocha sauce,not_tracked,not_tracked,no,syrup,White chocolate mocha sauce not tracked in store_inventory.csv.
+chai tea concentrate,Chai Concentrate,normalized_match,yes,tea_base,Menu uses 'chai tea concentrate'; inventory tracks as 'Chai Concentrate'.
+chai concentrate,Chai Concentrate,exact_match,yes,tea_base,Direct match to inventory ingredient.
+matcha powder,Matcha Powder,exact_match,yes,tea_base,Direct match to inventory ingredient.
+black tea,not_tracked,not_tracked,no,tea_base,Loose/bagged black tea not tracked in inventory as a separate ingredient.
+green tea,not_tracked,not_tracked,no,tea_base,Loose/bagged green tea not tracked in inventory as a separate ingredient.
+herbal tea,not_tracked,not_tracked,no,tea_base,Herbal tea bags not tracked in inventory.
+strawberry acai base,Strawberry Acai Base,exact_match,yes,refresher_base,Direct match to inventory ingredient.
+dragonfruit powder,Dragonfruit Powder,exact_match,yes,refresher_base,Direct match to inventory ingredient. Used in Mango Dragonfruit Refresher.
+refresher base,Strawberry Acai Base,default_assumption,yes,refresher_base,Generic 'refresher base' defaults to Strawberry Acai Base as the primary tracked refresher SKU.
+lemonade,not_tracked,not_tracked,no,refresher_base,Lemonade not tracked as a separate inventory ingredient.
+frappuccino base,Frappuccino Base,exact_match,yes,frappuccino_base,Direct match to inventory ingredient. Required for all Frappuccino drinks.
+whipped cream,Whipped Cream,exact_match,no,topping,Direct match to inventory ingredient. Not required; drinks can be served without if out of stock.
+caramel drizzle,Caramel Sauce,category_match,no,topping,Caramel drizzle uses the same Caramel Sauce SKU as the syrup.
+mocha drizzle,Mocha Sauce,category_match,no,topping,Mocha drizzle uses the same Mocha Sauce SKU.
+ice,Ice,exact_match,yes,ice,Direct match to inventory ingredient. Required for all iced and blended drinks.
+hot water,not_tracked,not_tracked,no,not_applicable,"Hot water (for Americanos, tea) is utility and not tracked in inventory."
+bacon,Bacon,exact_match,yes,food,Direct match to inventory ingredient. Required for bacon-based food items.
+eggs,Eggs,exact_match,yes,food,Direct match to inventory ingredient.
+spinach,Spinach,exact_match,yes,food,Direct match to inventory ingredient. Required for Spinach Feta & Egg White Wrap.
+croissant dough,Croissant Dough,exact_match,yes,food,Direct match to inventory ingredient. Required for croissant-based pastries.
+sandwich bread,Sandwich Bread,exact_match,yes,food,Direct match to inventory ingredient.
+turkey,Turkey Slices,normalized_match,yes,food,Menu refers to turkey; inventory tracks as Turkey Slices.
+blueberry,Blueberry Mix,normalized_match,yes,food,Menu refers to blueberries; inventory tracks as Blueberry Mix (used in Blueberry Muffin).

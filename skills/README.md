@@ -1,5 +1,23 @@
 # `skills/`
 
+> **BrewFlow AI — Active Skills** (see folders below for SKILL.md files).
+> The course template content below is preserved as reference.
+
+## Active BrewFlow Skills
+
+| Skill | Folder | Workflow Step | Role |
+|---|---|---|---|
+| product_catalog | `product_catalog/` | Any | Answer menu questions (ingredients, nutrition, dietary) |
+| recommendation | `recommendation/` | Barista guidance | Inventory-aware drink recommendation |
+| order_builder | `order_builder/` | Order building | Parse natural-language order into structured fields |
+| order_summary | `order_summary/` | Order confirmation | Customer confirmation + barista prep note |
+| workflow_orchestrator | `workflow_orchestrator/` | All | Full workflow chain and handoffs |
+
+Skills call MCP tools and automations — they do NOT re-implement tool logic.
+See each `SKILL.md` for inputs, tool calls, RAG documents, and output format.
+
+---
+
 A **skill** is a folder containing a `SKILL.md` file (which a Claude Code /
 Codex agent loads at runtime to decide when the skill applies) and a script
 the agent invokes that does the work. In this milestone, skills are the

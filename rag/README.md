@@ -1,5 +1,36 @@
 # `rag/`
 
+> **BrewFlow AI — Active RAG:** 12 knowledge base documents + `retrieval.py`.
+> `knowledge_base/EXAMPLE.md` is the course template — excluded from production retrieval.
+
+## BrewFlow Knowledge Base (12 documents)
+
+| Document | Used In |
+|---|---|
+| `barista_recommendation_guidelines.md` | recommendation |
+| `customization_policy.md` | order_builder |
+| `inventory_substitution_sop.md` | manager_readiness, order_builder |
+| `rush_hour_service_playbook.md` | manager_readiness, recommendation |
+| `manager_pre_shift_checklist.md` | manager_readiness |
+| `promotion_decision_policy.md` | manager_readiness |
+| `new_barista_menu_training_guide.md` | product_catalog, recommendation |
+| `order_confirmation_standard.md` | order_builder, order_summary |
+| `dietary_allergen_guidance.md` | recommendation, order_builder |
+| `drink_quality_consistency_sop.md` | order_builder, order_summary |
+| `service_recovery_policy.md` | recommendation, order_summary |
+| `post_rush_manager_review_template.md` | manager_readiness |
+
+## Retrieval Function
+
+```python
+from rag.retrieval import retrieve_internal_knowledge
+results = retrieve_internal_knowledge("dairy free allergen", top_k=3, workflow_step="barista_recommendation")
+```
+
+Deterministic keyword scoring — no vector DB, no API calls. EXAMPLE.md is excluded.
+
+---
+
 **Retrieval Augmented Generation** (RAG) lets your AI coworker answer
 questions and complete tasks using **proprietary** company information that
 the base model has not seen during training. You build a small knowledge
