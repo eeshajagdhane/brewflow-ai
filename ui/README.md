@@ -167,6 +167,97 @@ DOM. Edit `static/style.css` or `static/app.js` and refresh.
 
 ---
 
+## Manual Website Testing Guide
+
+Use this matrix to exercise the UI manually after any change. Every test
+below uses **live orchestrator calls** — no mocks, no canned outputs.
+
+**Hour values:** The UI shows 12-hour labels (e.g. `8:00 AM`). The
+**backend value** is the numeric hour (`8`). Both are listed below so you
+can confirm what the API actually receives.
+
+> **Tip:** Click **Clear** on the audit drawer between major test runs so
+> each run starts with a clean log.
+
+### A. Full Workflow (7 cases)
+
+The Full Workflow tab is the main demo path. Each row below is a complete
+input set — type the values manually or click a Quick Start where noted.
+
+| # | Scenario | Store | Date | Hour (UI) | Hour (backend) | Customer request | Raw order | Expected behaviour | Evidence Center | Review Queue | Audit Log |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| **A1** | **Normal happy path** *(Quick Start: ☕ Iced Vanilla Latte)* | SD001 | 2024-01-15 | 8:00 AM | `8` | "I want an iced latte, something smooth and lightly sweet." | `grande iced vanilla latte with oat milk` | All 3 phases run; status=needs_review (designed); face_validity=needs_review/review; structured order size=Grande, milk=Oat Milk | Tool tab: 4+ tools; RAG tab: 3+ docs; FV score ≥ 0.7 | `recommendation_candidates` item | `workflow_completed · full_workflow` entry |
+| **A2** | **Dairy-free recommendation** | SD001 | 2024-01-15 | 8:00 AM | `8` | "Iced sweet dairy-free, medium caffeine" | *(blank)* | Order phase skipped; recommendation candidates all vegan/dairy-free | Warning: *"Dairy-free preference applied as Vegan=Yes heuristic"* | `recommendation_candidates` only | Single `workflow_completed` entry |
+| **A3** | **High-caffeine cold coffee** *(Quick Start: 🧊 Cold Brew)* | SD001 | 2024-01-15 | 10:00 AM | `10` | "Cold, coffee-forward, smooth, a little sweet." | `grande vanilla sweet cream cold brew` | Cold-coffee candidates rank high; order parses sweet cream as customization | `has_caffeine` reason_code visible | `recommendation_candidates` item | Standard entry |
+| **A4** | **Oat-milk / inventory-aware** *(Quick Start: 🥛 Brown Sugar Espresso)* | SD001 | 2024-01-15 | 8:00 AM | `8` | "Iced, espresso-based, sweet, oat milk." | `grande iced brown sugar oatmilk shaken espresso` | Inventory check runs; if oat milk is low you'll see substitution warning | Tool tab shows `check_inventory_status`; warning if stock is low | `recommendation_candidates` (+ inventory note if low) | Standard entry |
+| **A5** | **Allergy-sensitive** | SD001 | 2024-01-15 | 8:00 AM | `8` | "I have a nut allergy and want something dairy-free." | *(blank)* | face_validity.status=needs_review, **recommended_action=escalate** | Warnings tab includes allergy line; FV anchors+concerns mention allergy | `recommendation_allergy_review` (escalate) | Single entry, status `needs_review` |
+| **A6** | **Missing size order** | SD001 | 2024-01-15 | 8:00 AM | `8` | "Something hot for the morning." | `iced latte with oat milk` *(no size)* | Order Builder card shows `missing_fields: ["size"]` + follow-up question | Warnings minimal; FV shows `ask_follow_up` | `order_missing_fields` item with follow-up question | Standard entry |
+| **A7** | **Unknown item** | SD001 | 2024-01-15 | 8:00 AM | `8` | "Surprise me." | `large unicorn cloud drink with rainbow foam` | Item resolution falls back via menu search; item_resolution.candidates listed | RAG retrieval still runs; Tool tab includes `build_and_validate_order` | `recommendation_candidates` (+ possibly missing item flag) | Standard entry |
+
+### B. Manager View (3 cases)
+
+| # | Scenario | Store | Date | Hour (UI) | Hour (backend) | Expected behaviour |
+|---|---|---|---|---|---|---|
+| **B1** | **Normal afternoon readiness** | SD003 | 2024-02-20 | 2:00 PM | `14` | overall=success or warning; face_validity often `plausible` (green); 0–1 review items; barista_guidance.rush_level=low |
+| **B2** | **High rush / staffing gap** | SD001 | 2024-01-15 | 8:00 AM | `8` | demand=high, demand_level=Very High, forecast≈211; recommended_actions includes CRITICAL/ACTION items; barista_guidance.rush_level=high |
+| **B3** | **Missing/weak data** | SD001 | 2024-05-30 *(outside data range)* | 8:00 AM | `8` | Warnings list non-empty (sparse or missing forecast); face_validity quality_score downgraded |
+
+For each Manager run, check the **barista_guidance** block in the output card — `rush_level`, `service_mode`, `avoid_ingredients`, `caution_ingredients`, `promotion_items`.
+
+### C. Barista View (5 cases)
+
+All Barista runs below use `SD001 / 2024-01-15`.
+
+| # | Scenario | Hour (UI) | Hour (backend) | Customer request | Suggested preferences | Expected behaviour |
+|---|---|---|---|---|---|---|
+| **C1** | **Iced sweet dairy-free** | 8:00 AM | `8` | "Iced, sweet, dairy-free" | milk_preference: dairy-free | Vegan candidates (Iced Black Tea, Pink Drink, Mango Dragonfruit) |
+| **C2** | **Cold brew / high caffeine** | 10:00 AM | `10` | "Cold coffee with strong caffeine" | temperature: iced; caffeine: high | Cold-coffee candidates rank high (Nitro Cold Brew, Cold Brew Coffee, Iced Americano) |
+| **C3** | **Vague request** | 8:00 AM | `8` | "Something good" | *(none)* | System returns broad candidates; quality_score may dip; face_validity still needs_review (designed) |
+| **C4** | **Allergy-sensitive** | 8:00 AM | `8` | "I have a nut allergy, dairy-free please" | milk_preference: dairy-free | face_validity escalates; `recommendation_allergy_review` item in queue |
+| **C5** | **Low-calorie request** | 8:00 AM | `8` | "Light, low-calorie, refreshing" | low_calorie: true | Top candidates skew to teas / refreshers; reason_codes include `low_calorie` |
+
+All recommendation runs have `review_required=True` by design.
+
+### D. Order Builder (5 cases)
+
+All Order Builder runs use `SD001 / 2024-01-15`.
+
+| # | Scenario | Raw order | Expected behaviour |
+|---|---|---|---|
+| **D1** | **Complete normal order** | `grande iced caramel macchiato with oat milk` | item=Iced Caramel Macchiato, size=Grande, temp=Iced, milk=Oat Milk; no missing fields |
+| **D2** | **Missing size** | `iced latte with oat milk` | `missing_fields: ["size"]`, follow_up_question populated; status=needs_review |
+| **D3** | **Ambiguous / unknown drink** | `large unicorn cloud drink with rainbow foam` | item_resolution falls back via menu search; candidates list shows closest matches |
+| **D4** | **Allergy-sensitive** | `grande latte, I have a nut allergy` | human_review_required=true; allergy warning; face_validity recommends `escalate` |
+| **D5** | **Heavy customization** | `grande iced matcha with oat milk, light ice, vanilla, extra shot` | customizations=[light ice, extra shot]; syrups=[vanilla]; milk_type=Oat Milk; prep_notes include each |
+
+### E. Evidence Center — what should appear
+
+After running any workflow, switch to **🔍 Evidence Center** and check each sub-tab:
+
+| Sub-tab | What should be there | When |
+|---|---|---|
+| **Tool / Data** | Every MCP tool / automation that fired, with status pill (green/yellow). Manager runs see 3+ tools, Recommendation sees 2–3, Order Builder sees 1, Full Workflow sees all of them. | After every run |
+| **RAG** | 3+ documents per workflow with title, filename, score, matched terms, snippet. For dairy-free / allergy queries you'll see `dietary_allergen_guidance.md`. For rush queries: `rush_hour_service_playbook.md`. | After every run |
+| **Assumptions** | Lines like *"Rush period active — recommendation tuned for high-demand context"* when the workflow had to assume defaults. Empty for clean runs. | When the orchestrator filled in defaults |
+| **Warnings** | Lines like *"HIGH rush risk at hour 08:00 — forecast 211 orders"*, allergy warnings, latest-prior-snapshot warnings. | When the run produced warnings |
+| **Quality + Face Validity** | Face Validity card with status / confidence / anchors + Evidence Quality summary (score + label + recommendation + count). | Always — face_validity is required on every run |
+
+### F. Review Queue — what produces items
+
+| Scenario | Review item that should appear |
+|---|---|
+| Any barista recommendation | `recommendation_candidates` — designed human approval before serving |
+| Allergy/medical language in request or order | `recommendation_allergy_review` *or* `order_allergy_review` — escalate |
+| Missing required order fields (size, temperature) | `order_missing_fields` with follow-up question — ask follow-up |
+| Weak evidence quality (score < 0.3) | Workflow-level needs_review with low-quality concern |
+| Low-stock substitution needed | Inventory warning surfaces in evidence; reviewer should verify before approving recommendation |
+| Unknown / ambiguous item | Order item_resolution returns candidates instead of canonical_name; reviewer picks one |
+| Vague request | No specific review item, but `recommendation_candidates` still queued |
+
+Use the **filter chips** (All / Pending / Approved / Escalated) at the top of the Review Queue to scope what you see after acting on items. Each Approve / Edit / Reject + Rerun / Escalate click updates the UI and appends a `user_review` entry to the Audit Log.
+
+---
+
 ## Tests
 
 Local route tests live in [`../tests/test_ui_routes.py`](../tests/test_ui_routes.py).

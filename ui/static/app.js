@@ -44,6 +44,91 @@
     return { ok: res.ok, status: res.status, data };
   }
 
+  // ===================================================================
+  // Form validation — per-field inline messages
+  // ===================================================================
+  // Each required field has a <span class="field-error" id="<id>-err"> right
+  // below its input. validateFields() flips that span on/off with a
+  // specific, human-readable message.  No summary block is rendered.
+
+  const FIELD_ERROR_MSG = {
+    "full-store":   "Please select a store.",
+    "full-date":    "Please select a date.",
+    "full-hour":    "Please select an hour.",
+    "full-request": "Please enter a customer request.",
+
+    "mgr-store":    "Please select a store.",
+    "mgr-date":     "Please select a date.",
+    "mgr-hour":     "Please select an hour.",
+
+    "bar-store":    "Please select a store.",
+    "bar-date":     "Please select a date.",
+    "bar-hour":     "Please select an hour.",
+    "bar-request":  "Please enter a customer request.",
+
+    "ord-store":    "Please select a store.",
+    "ord-date":     "Please select a date.",
+    "ord-raw":      "Please enter a raw order.",
+  };
+
+  function setFieldError(id, message) {
+    const node = document.getElementById(id);
+    if (node) {
+      node.classList.add("invalid");
+      node.setAttribute("aria-invalid", "true");
+    }
+    const errEl = document.getElementById(`${id}-err`);
+    if (errEl) {
+      errEl.textContent = message;
+      errEl.hidden = false;
+    }
+  }
+
+  function clearFieldError(id) {
+    const node = document.getElementById(id);
+    if (node) {
+      node.classList.remove("invalid");
+      node.removeAttribute("aria-invalid");
+    }
+    const errEl = document.getElementById(`${id}-err`);
+    if (errEl) errEl.hidden = true;
+  }
+
+  function validateFields(ids) {
+    let valid = true;
+    let firstInvalid = null;
+    ids.forEach((id) => {
+      const node = document.getElementById(id);
+      if (!node) return;
+      const val = (node.value || "").trim();
+      if (!val) {
+        setFieldError(id, FIELD_ERROR_MSG[id] || "This field is required.");
+        if (!firstInvalid) firstInvalid = node;
+        valid = false;
+      } else {
+        clearFieldError(id);
+      }
+    });
+    if (!valid && firstInvalid && typeof firstInvalid.scrollIntoView === "function") {
+      firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
+      // Don't steal focus from buttons too aggressively; only focus on submit failure.
+      try { firstInvalid.focus({ preventScroll: true }); } catch (e) { /* noop */ }
+    }
+    return valid;
+  }
+
+  // Live-clear inline errors as the user provides input
+  Object.keys(FIELD_ERROR_MSG).forEach((id) => {
+    const node = document.getElementById(id);
+    if (!node) return;
+    const handler = () => {
+      const val = (node.value || "").trim();
+      if (val) clearFieldError(id);
+    };
+    node.addEventListener("change", handler);
+    node.addEventListener("input", handler);
+  });
+
   function readPrefs(idPrefix) {
     const prefs = {};
     const map = {
@@ -628,12 +713,13 @@
   function hideEmpty(id) { const e = document.getElementById(id); if (e) e.hidden = true; }
 
   document.getElementById("run-manager").addEventListener("click", async (e) => {
+    if (!validateFields(["mgr-store", "mgr-date", "mgr-hour"])) return;
     const btn = e.currentTarget; btn.disabled = true;
     try {
       const body = {
-        store_id: document.getElementById("mgr-store").value || "SD001",
+        store_id: document.getElementById("mgr-store").value,
         date: document.getElementById("mgr-date").value || "2024-01-15",
-        hour: Number(document.getElementById("mgr-hour").value || 8),
+        hour: Number(document.getElementById("mgr-hour").value),
       };
       const { ok, data } = await postJSON("/api/manager_readiness", body);
       if (!ok) flashBanner("Manager readiness failed: " + (data.error || ""), "err");
@@ -645,12 +731,13 @@
   });
 
   document.getElementById("run-barista").addEventListener("click", async (e) => {
+    if (!validateFields(["bar-store", "bar-date", "bar-hour", "bar-request"])) return;
     const btn = e.currentTarget; btn.disabled = true;
     try {
       const body = {
-        store_id: document.getElementById("bar-store").value || "SD001",
+        store_id: document.getElementById("bar-store").value,
         date: document.getElementById("bar-date").value || "2024-01-15",
-        hour: Number(document.getElementById("bar-hour").value || 8),
+        hour: Number(document.getElementById("bar-hour").value),
         customer_request: document.getElementById("bar-request").value || "",
         preferences: readPrefs("bar"),
       };
@@ -664,10 +751,11 @@
   });
 
   document.getElementById("run-order").addEventListener("click", async (e) => {
+    if (!validateFields(["ord-store", "ord-date", "ord-raw"])) return;
     const btn = e.currentTarget; btn.disabled = true;
     try {
       const body = {
-        store_id: document.getElementById("ord-store").value || "SD001",
+        store_id: document.getElementById("ord-store").value,
         date: document.getElementById("ord-date").value || "2024-01-15",
         raw_order: document.getElementById("ord-raw").value || "",
       };
@@ -681,12 +769,13 @@
   });
 
   document.getElementById("run-full").addEventListener("click", async (e) => {
+    if (!validateFields(["full-store", "full-date", "full-hour", "full-request"])) return;
     const btn = e.currentTarget; btn.disabled = true;
     try {
       const body = {
-        store_id: document.getElementById("full-store").value || "SD001",
+        store_id: document.getElementById("full-store").value,
         date: document.getElementById("full-date").value || "2024-01-15",
-        hour: Number(document.getElementById("full-hour").value || 8),
+        hour: Number(document.getElementById("full-hour").value),
         customer_request: document.getElementById("full-request").value || "",
         raw_order: document.getElementById("full-raworder").value || null,
         preferences: readPrefs("full"),
@@ -702,37 +791,72 @@
   });
 
   // ===================================================================
-  // Sample-fill buttons (pre-fill only)
+  // Common Quick Starts — pre-fill realistic employee inputs only.
+  // These never produce outputs. The user must still click Run.
   // ===================================================================
-  document.querySelectorAll(".sample").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const k = btn.dataset.sample;
-      if (k === "rush-dairyfree") {
-        document.getElementById("full-store").value = "SD001";
-        document.getElementById("full-date").value = "2024-01-15";
-        document.getElementById("full-hour").value = "8";
-        document.getElementById("full-request").value = "I want something iced, sweet, dairy-free, and medium caffeine.";
-        document.getElementById("full-raworder").value = "grande iced chai with almond milk";
-        document.getElementById("full-pref-milk").value = "dairy-free";
-        document.getElementById("full-pref-temp").value = "iced";
-        flashBanner("Pre-filled. Click Run Full Workflow to execute.", "ok");
-      } else if (k === "missing-size") {
-        document.getElementById("full-store").value = "SD001";
-        document.getElementById("full-date").value = "2024-01-15";
-        document.getElementById("full-hour").value = "8";
-        document.getElementById("full-request").value = "Something hot for the morning";
-        document.getElementById("full-raworder").value = "iced latte with oat milk";
-        flashBanner("Pre-filled. Click Run Full Workflow to execute.", "ok");
-      } else if (k === "allergy") {
-        document.getElementById("full-store").value = "SD001";
-        document.getElementById("full-date").value = "2024-01-15";
-        document.getElementById("full-hour").value = "8";
-        document.getElementById("full-request").value = "I have a nut allergy and want something dairy-free.";
-        document.getElementById("full-raworder").value = "";
-        document.getElementById("full-pref-milk").value = "dairy-free";
-        flashBanner("Pre-filled. Click Run Full Workflow to execute.", "ok");
-      }
-    });
+
+  // Helper: set a field's value AND dispatch a change event so the
+  // validation listeners (which only fire on user interaction by default)
+  // clear any prior `invalid` state and hide the error block.
+  function setField(id, value) {
+    const node = document.getElementById(id);
+    if (!node) return;
+    node.value = value;
+    node.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+
+  // Apply a complete quick-start preset by id.
+  function applyQuickStart(key) {
+    const presets = {
+      "vanilla-latte": {
+        store: "SD001", date: "2024-01-15", hour: "8",
+        request: "I want an iced latte, something smooth and lightly sweet.",
+        raworder: "grande iced vanilla latte with oat milk",
+        prefs: {
+          temp: "iced", sweet: "medium", milk: "oat milk",
+          caffeine: "medium", coffee: "coffee", lowcal: "",
+        },
+        flash: "Pre-filled: Iced Vanilla Latte scenario. Click Run Full Workflow.",
+      },
+      "cold-brew": {
+        store: "SD001", date: "2024-01-15", hour: "10",
+        request: "I want something cold, coffee-forward, smooth, and a little sweet.",
+        raworder: "grande vanilla sweet cream cold brew",
+        prefs: {
+          temp: "iced", sweet: "medium", milk: "",         // "no preference" → leave blank
+          caffeine: "high", coffee: "coffee", lowcal: "",
+        },
+        flash: "Pre-filled: Vanilla Sweet Cream Cold Brew scenario. Click Run Full Workflow.",
+      },
+      "brown-sugar": {
+        store: "SD001", date: "2024-01-15", hour: "8",
+        request: "I want something iced, espresso-based, sweet, and made with oat milk.",
+        raworder: "grande iced brown sugar oatmilk shaken espresso",
+        prefs: {
+          temp: "iced", sweet: "sweet", milk: "oat milk",
+          caffeine: "high", coffee: "coffee", lowcal: "",
+        },
+        flash: "Pre-filled: Brown Sugar Oatmilk Shaken Espresso scenario. Click Run Full Workflow.",
+      },
+    };
+    const p = presets[key];
+    if (!p) return;
+    setField("full-store", p.store);
+    setField("full-date", p.date);
+    setField("full-hour", p.hour);
+    setField("full-request", p.request);
+    setField("full-raworder", p.raworder);
+    setField("full-pref-temp", p.prefs.temp);
+    setField("full-pref-sweet", p.prefs.sweet);
+    setField("full-pref-milk", p.prefs.milk);
+    setField("full-pref-caffeine", p.prefs.caffeine);
+    setField("full-pref-coffee", p.prefs.coffee);
+    setField("full-pref-lowcal", p.prefs.lowcal);
+    flashBanner(p.flash, "ok");
+  }
+
+  document.querySelectorAll(".qs-card").forEach((btn) => {
+    btn.addEventListener("click", () => applyQuickStart(btn.dataset.quickstart));
   });
 
   // ===================================================================

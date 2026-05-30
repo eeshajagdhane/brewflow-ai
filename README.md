@@ -5,6 +5,89 @@
 BrewFlow AI is a live role-based AI operations console for a simulated Starbucks branch.
 All outputs are generated from real CSV data and deterministic logic — **no canned demo responses**.
 
+> ⚠ **Simulated branch prototype.** BrewFlow AI uses the public Starbucks
+> menu plus **simulated** operational CSVs (inventory, staffing, sales
+> forecast, order history, promotions). **No proprietary Starbucks data
+> is used.** All quantitative estimates in this repo are reasoned ranges,
+> not company facts.
+
+---
+
+## Milestone 04 Final Deliverables
+
+| # | Deliverable | File |
+|---|---|---|
+| 1 | Final process redesign + workflow diagram | [`ai_process_design.md`](ai_process_design.md) / [`ai_process_design.pdf`](ai_process_design.pdf) |
+| 2 | Human review and control plan (7 workflow steps, explicit approval points) | [`human_review_plan.md`](human_review_plan.md) |
+| 3 | Evidence and source use | [`evidence_and_sources.md`](evidence_and_sources.md) |
+| 4 | Time, cost, and quality reasoning | [`estimates.md`](estimates.md) |
+| 5 | Predicted failure cases (8 cases, test-mapped) | [`failure_cases.md`](failure_cases.md) |
+| 6 | Test report + before/after fix | [`test_report.md`](test_report.md) |
+| 7 | Face-validity layer | [`face_validity.md`](face_validity.md) |
+| 8 | Final presentation outline | [`presentation_slides/final_presentation_outline.md`](presentation_slides/final_presentation_outline.md) |
+| 9 | 10-minute demo script | [`presentation_slides/demo_script.md`](presentation_slides/demo_script.md) |
+
+### What was redesigned
+
+BrewFlow AI redesigns the **daily operations + order fulfilment workflow**
+of a single coffee-shop branch. The redesigned chain runs:
+
+> Manager pre-rush readiness → barista drink recommendation → order
+> building and validation → order confirmation → human review → audit.
+
+### What BrewFlow AI does
+
+- Aggregates inventory, staffing, demand forecast, and active promotions
+  into a single pre-shift readiness briefing for the manager.
+- Parses natural-language customer requests into preferences and ranks
+  menu candidates with inventory-aware scoring and explicit reason codes.
+- Parses raw order text into structured fields (size / temperature / milk
+  / syrups / customisations), catching missing fields before submission.
+- Routes allergy and medical-sensitive language automatically to
+  `escalate`, never silently approving customer-facing recommendations.
+- Produces an `evidence_package` per run (tool outputs, RAG snippets,
+  assumptions, warnings) plus a deterministic `face_validity` verdict.
+- Logs every workflow step and every human review action to an audit log.
+
+### What humans still control
+
+- Final approval of any customer-facing recommendation or order.
+- Allergen verification (always escalated, never auto-approved).
+- Order-text follow-ups when required fields are missing.
+- Manager adjustments to staffing or inventory after reviewing the briefing.
+- Drink preparation itself — drinks are still prepared individually for
+  quality consistency per the retrieved RAG SOP.
+
+### What evidence users can inspect
+
+For every workflow run, the Evidence Center surfaces:
+
+1. **Tool / Data** — every MCP tool / automation call with status
+2. **RAG** — retrieved knowledge-base documents with filename, score,
+   matched terms, and snippet
+3. **Assumptions** — defaults the workflow had to apply
+4. **Warnings** — any signal that something is off (stale snapshot,
+   dairy-free heuristic, rush risk, allergy language)
+5. **Quality + Face Validity** — quality score with label + the face
+   validity verdict (status, confidence, anchors, supporting reasons,
+   concerns, recommended action)
+
+### What could go wrong + how the process handles it
+
+The complete predicted-failure register lives in
+[`failure_cases.md`](failure_cases.md). At a glance:
+
+| Failure mode | Mitigation |
+|---|---|
+| Item name not resolved | Follow-up question + closest-match candidates surfaced |
+| Stale inventory snapshot | Latest-prior fallback + `stale_data` warning + downgraded face validity |
+| Dairy-free heuristic miss | Heuristic labelled in warnings; allergen path forces review |
+| Sparse demand history | `low_sample_size` warning + forecast as secondary signal |
+| Missed promotion | Active promos surfaced separately in manager briefing |
+| Customisation drop | Prep notes render every customisation line; review required |
+| Inflated evidence score | Matched-term chips visible so reviewers can verify relevance |
+| False allergy escalation from RAG content | Fixed: face validity scans only safe signal sources |
+
 ---
 
 ## What BrewFlow AI Does
