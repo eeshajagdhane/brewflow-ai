@@ -49,6 +49,37 @@ from scripts.orchestrator import (  # noqa: E402
 _AUDIT_LOG: list[dict] = []
 _AUDIT_LOCK = Lock()
 
+# ---------------------------------------------------------------------------
+# In-process Order Queue
+# ---------------------------------------------------------------------------
+# Category display order for smart grouping (lower = earlier in queue)
+_CATEGORY_ORDER: dict[str, int] = {
+    "Hot Coffee": 0,
+    "Cold Coffee": 1,
+    "Frappuccino": 2,
+    "Hot Tea": 3,
+    "Iced Tea": 4,
+    "Cold Drinks": 5,
+    "Hot Drinks": 6,
+    "Bottled Beverages": 7,
+    "Bakery": 8,
+    "Breakfast": 9,
+    "Lunch": 10,
+    "Snacks & Sweets": 11,
+}
+
+_ORDER_QUEUE: list[dict] = []
+_QUEUE_LOCK = Lock()
+_queue_counter = 0
+
+
+def _queue_sort_key(order: dict) -> tuple:
+    """Sort: category priority → item name (groups identical drinks) → time added."""
+    cat_pri = _CATEGORY_ORDER.get(order.get("category", ""), 99)
+    item = (order.get("item") or "").lower()
+    ts = order.get("queued_at", "")
+    return (cat_pri, item, ts)
+
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -220,8 +251,7 @@ def api_review_action():
         source="user_review",
         action=action,
         workflow_type=workflow_type,
-        message=f"User {action} on {target or workflow_type or 'workflow'}"
-        + (f": {notes}" if notes else ""),
+        message=f"User {action} on {target or workflow_type or 'workflow'}" + (f": {notes}" if notes else ""),
         payload={"target": target, "notes": notes},
     )
     return jsonify({"status": "recorded", "entry": entry}), 200
@@ -240,6 +270,74 @@ def api_audit_log():
 def api_audit_log_clear():
     with _AUDIT_LOCK:
         _AUDIT_LOG.clear()
+    return jsonify({"status": "cleared"}), 200
+
+
+# ---- API: Order Queue ----------------------------------------------------
+
+
+@app.route("/api/queue", methods=["GET"])
+def api_queue_get():
+    with _QUEUE_LOCK:
+        sorted_q = sorted(_ORDER_QUEUE, key=_queue_sort_key)
+        return jsonify({"queue": sorted_q, "count": len(sorted_q)}), 200
+
+
+@app.route("/api/queue/add", methods=["POST"])
+def api_queue_add():
+    global _queue_counter
+    body = _json_body()
+    item = str(body.get("item") or "").strip()
+    if not item:
+        return jsonify({"error": "item is required"}), 400
+    with _QUEUE_LOCK:
+        _queue_counter += 1
+        entry = {
+            "id": _queue_counter,
+            "item": item,
+            "category": body.get("category") or "",
+            "subcategory": body.get("subcategory") or "",
+            "size": body.get("size") or "",
+            "milk_type": body.get("milk_type") or "",
+            "temperature": body.get("temperature") or "",
+            "syrups": body.get("syrups") or [],
+            "customizations": body.get("customizations") or [],
+            "notes": body.get("notes") or "",
+            "workflow_type": body.get("workflow_type") or "",
+            "queued_at": _now_iso(),
+        }
+        _ORDER_QUEUE.append(entry)
+    _record_audit(
+        source="order_queue",
+        action="queued",
+        workflow_type=entry["workflow_type"],
+        message=f"Queued: {item}",
+        payload=entry,
+    )
+    return jsonify({"status": "queued", "entry": entry}), 200
+
+
+@app.route("/api/queue/<int:order_id>/done", methods=["DELETE"])
+def api_queue_done(order_id: int):
+    with _QUEUE_LOCK:
+        found = next((o for o in _ORDER_QUEUE if o["id"] == order_id), None)
+        if not found:
+            return jsonify({"error": f"Order #{order_id} not found"}), 404
+        _ORDER_QUEUE[:] = [o for o in _ORDER_QUEUE if o["id"] != order_id]
+    _record_audit(
+        source="order_queue",
+        action="dequeued",
+        message=f"Done: #{order_id} {found.get('item', '')}",
+        payload=found,
+    )
+    return jsonify({"status": "done", "removed": found}), 200
+
+
+@app.route("/api/queue", methods=["DELETE"])
+def api_queue_clear():
+    with _QUEUE_LOCK:
+        _ORDER_QUEUE.clear()
+    _record_audit(source="order_queue", action="cleared", message="Order queue cleared")
     return jsonify({"status": "cleared"}), 200
 
 

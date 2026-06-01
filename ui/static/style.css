@@ -1171,3 +1171,350 @@ button.run:disabled {
   .main { padding: 16px 16px calc(var(--drawer-collapsed-h) + 16px) 16px; }
   .sim-chip { font-size: 10.5px; }
 }
+
+/* ============================ STORE SELECTION STARTUP ============================ */
+
+.store-select-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 4px;
+}
+.store-select-btn {
+  padding: 14px 20px;
+  border: 1.5px solid var(--neutral-200);
+  border-radius: 10px;
+  background: white;
+  color: var(--neutral-900);
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 150ms ease, background 150ms ease,
+              transform 150ms ease, box-shadow 180ms ease;
+}
+.store-select-btn:hover {
+  border-color: var(--caramel);
+  background: var(--caramel-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.store-select-btn:active { transform: translateY(0); }
+
+/* Store pill in topbar */
+.store-pill {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 14px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.22);
+  color: rgba(255,255,255,0.75);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+.store-pill.active {
+  background: rgba(255,255,255,0.20);
+  color: white;
+  border-color: rgba(255,255,255,0.35);
+}
+
+/* ============================ PREFERENCE CHIPS (BARISTA) ============================ */
+
+.pref-chips-section { margin-top: 20px; }
+
+.pref-chips-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--neutral-500);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+}
+
+.pref-chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pref-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 16px;
+  border: 1.5px solid var(--neutral-300);
+  border-radius: 20px;
+  background: white;
+  color: var(--neutral-700);
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 150ms ease, background 150ms ease,
+              color 150ms ease, transform 130ms ease, box-shadow 150ms ease;
+}
+.pref-chip:hover {
+  border-color: var(--caramel);
+  background: var(--caramel-light);
+  color: var(--neutral-900);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+.pref-chip:active { transform: translateY(0); }
+.pref-chip.active {
+  background: var(--coffee);
+  border-color: var(--coffee);
+  color: white;
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+.pref-chip.active:hover {
+  background: var(--coffee-dark);
+  border-color: var(--coffee-dark);
+}
+.pref-chip.allergy-chip.active {
+  background: var(--error);
+  border-color: var(--error);
+}
+.pref-chip.allergy-chip.active:hover {
+  background: #B91C1C;
+  border-color: #B91C1C;
+}
+.pref-chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--caramel-light);
+}
+
+/* Allergy text input — revealed on allergy chip click */
+.allergy-reveal {
+  margin-top: 12px;
+  padding: 14px 16px;
+  background: var(--error-light);
+  border: 1px solid #FECACA;
+  border-radius: 10px;
+  animation: fadein 180ms ease;
+}
+.allergy-reveal label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--error);
+}
+.allergy-reveal input {
+  padding: 8px 10px;
+  border: 1px solid #FECACA;
+  border-radius: 6px;
+  font-size: 13.5px;
+  font-family: inherit;
+  background: white;
+}
+.allergy-reveal input:focus {
+  outline: none;
+  border-color: var(--error);
+  box-shadow: 0 0 0 3px var(--error-light);
+}
+
+/* Further refinement options — appears after recommendation */
+.further-options-section {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--neutral-300);
+  animation: fadein 300ms ease;
+}
+
+/* Pref group separator */
+.pref-group-divider {
+  width: 100%;
+  height: 0;
+  flex-basis: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--neutral-400);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 4px 0 -2px;
+}
+.pref-group-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--neutral-200);
+}
+
+/* ============================ ORDER QUEUE ============================ */
+
+.queue-summary-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.queue-total-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--coffee);
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: 20px;
+}
+.queue-clear-btn {
+  background: white;
+  border: 1px solid var(--error);
+  color: var(--error);
+  font-size: 12px;
+  font-family: inherit;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+.queue-clear-btn:hover { background: var(--error-light); }
+
+/* Category group */
+.queue-group {
+  margin-bottom: 22px;
+}
+.queue-group-header {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--neutral-500);
+  border-bottom: 2px solid var(--neutral-200);
+  padding-bottom: 6px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.queue-group-count {
+  background: var(--coffee-light);
+  color: var(--coffee-dark);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+
+/* Individual queue item */
+.queue-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--cream);
+  border: 1px solid var(--neutral-200);
+  border-left: 4px solid var(--coffee-light);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  box-shadow: var(--shadow-sm);
+  transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+  animation: fadein 200ms ease;
+}
+.queue-item:hover {
+  border-left-color: var(--coffee);
+  box-shadow: var(--shadow-md);
+  transform: translateX(2px);
+}
+.queue-item.just-added {
+  border-left-color: var(--success);
+  background: var(--success-light);
+}
+.queue-order-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--neutral-400);
+  font-family: var(--font-mono);
+  min-width: 28px;
+}
+.queue-item-body {
+  flex: 1;
+  min-width: 0;
+}
+.queue-item-name {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--coffee-dark);
+  display: block;
+}
+.queue-item-meta {
+  font-size: 12px;
+  color: var(--neutral-500);
+  margin-top: 3px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.queue-meta-chip {
+  background: var(--neutral-100);
+  border: 1px solid var(--neutral-200);
+  padding: 1px 7px;
+  border-radius: 8px;
+  font-size: 11.5px;
+}
+.queue-item-time {
+  font-size: 11px;
+  color: var(--neutral-400);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.queue-done-btn {
+  flex-shrink: 0;
+  background: var(--success);
+  color: white;
+  border: none;
+  padding: 7px 16px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 150ms ease, transform 100ms ease, box-shadow 150ms ease;
+  box-shadow: var(--shadow-sm);
+}
+.queue-done-btn:hover { background: #15803D; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.queue-done-btn:active { transform: translateY(0); }
+
+/* Add to queue button (appears in recommendation output) */
+.add-to-queue-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: white;
+  border: 1.5px solid var(--coffee);
+  color: var(--coffee-dark);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 4px 12px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: background 150ms ease, transform 120ms ease, box-shadow 150ms ease;
+  margin-top: 6px;
+}
+.add-to-queue-btn:hover {
+  background: var(--coffee-light);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+.add-to-queue-btn.queued {
+  background: var(--success);
+  border-color: var(--success);
+  color: white;
+  cursor: default;
+  transform: none;
+}

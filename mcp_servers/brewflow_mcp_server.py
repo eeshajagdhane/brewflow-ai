@@ -28,7 +28,13 @@ import pandas as pd
 
 from automations.demand_rush_detection.run_demand_rush_detection import run_demand_rush_detection
 from automations.staffing_gap_calculator.run_staffing_gap_calculator import run_staffing_gap_calculator
-from utils.data_loader import load_ingredient_mapping, load_item_name_mapping, load_menu, load_order_history, load_promotion_margins
+from utils.data_loader import (
+    load_ingredient_mapping,
+    load_item_name_mapping,
+    load_menu,
+    load_order_history,
+    load_promotion_margins,
+)
 from utils.inventory_matching import check_ingredients_availability, get_inventory_snapshot
 from utils.menu_matching import find_menu_candidates, get_menu_item, normalize_text, resolve_item_name
 from utils.workflow_common import make_tool_response
@@ -121,10 +127,28 @@ def get_menu_item_info(item_name: str) -> dict:
 
 _CAFFEINE_HIGH_TERMS = {"high", "medium", "yes", "caffeinated", "regular", "true", "med"}
 _CAFFEINE_LOW_TERMS = {"low", "none", "no", "decaf", "decaffeinated", "caffeine-free", "caffeine free", "false"}
-_DAIRY_FREE_TERMS = {"dairy-free", "dairy free", "non-dairy", "non dairy", "plant-based",
-                     "plant based", "vegan", "no dairy", "lactose-free", "lactose free"}
-_NON_COFFEE_TERMS = {"non-coffee", "non coffee", "no coffee", "no-coffee", "without coffee",
-                     "tea", "refresher", "non_coffee"}
+_DAIRY_FREE_TERMS = {
+    "dairy-free",
+    "dairy free",
+    "non-dairy",
+    "non dairy",
+    "plant-based",
+    "plant based",
+    "vegan",
+    "no dairy",
+    "lactose-free",
+    "lactose free",
+}
+_NON_COFFEE_TERMS = {
+    "non-coffee",
+    "non coffee",
+    "no coffee",
+    "no-coffee",
+    "without coffee",
+    "tea",
+    "refresher",
+    "non_coffee",
+}
 _SWEETNESS_TERMS = {"sweet", "very sweet", "extra sweet", "sugary"}
 
 
@@ -214,9 +238,17 @@ def search_menu_by_preferences(
     # Food categories to exclude unless explicitly requested
     food_categories = {"Bakery", "Breakfast", "Lunch", "Snacks & Sweets"}
     drink_categories = {
-        "Hot Coffee", "Cold Coffee", "Cold Drinks", "Frappuccino",
-        "Iced Tea", "Hot Tea", "Hot Drinks", "Bottled Beverages",
-        "Seasonal - Holiday", "Seasonal - Spring", "Seasonal - Fall",
+        "Hot Coffee",
+        "Cold Coffee",
+        "Cold Drinks",
+        "Frappuccino",
+        "Iced Tea",
+        "Hot Tea",
+        "Hot Drinks",
+        "Bottled Beverages",
+        "Seasonal - Holiday",
+        "Seasonal - Spring",
+        "Seasonal - Fall",
         "Seasonal - Winter/Spring",
     }
 
@@ -248,7 +280,16 @@ def search_menu_by_preferences(
 
         # Non-coffee filter
         if non_coffee:
-            coffee_terms = ("coffee", "espresso", "latte", "americano", "mocha", "macchiato", "cappuccino", "flat white")
+            coffee_terms = (
+                "coffee",
+                "espresso",
+                "latte",
+                "americano",
+                "mocha",
+                "macchiato",
+                "cappuccino",
+                "flat white",
+            )
             if any(t in item_lower for t in coffee_terms):
                 disqualified = True
 
@@ -264,8 +305,7 @@ def search_menu_by_preferences(
         if dairy_free and str(row.get("Vegan", "No")) != "Yes":
             # Only a heuristic — flag in warnings
             warnings.append(
-                "Dairy-free preference applied as 'Vegan=Yes' heuristic. "
-                "Verify specific milk options with barista."
+                "Dairy-free preference applied as 'Vegan=Yes' heuristic. Verify specific milk options with barista."
             ) if "Dairy-free heuristic" not in " ".join(warnings) else None
             disqualified = True
 
@@ -314,6 +354,21 @@ def search_menu_by_preferences(
                 score += 1.0
                 reason_codes.append(f"keyword:{kw}")
 
+        # Named-item boost — customer explicitly requested this item by name
+        named_item_pref = str(preferences.get("named_item", "")).strip().lower()
+        if named_item_pref and named_item_pref == item_lower:
+            score += 10.0
+            reason_codes.append("named_item_match")
+        elif named_item_pref and named_item_pref in item_lower:
+            score += 5.0
+            reason_codes.append("named_item_partial")
+
+        # Same-category boost — group items with the named item's category
+        named_category_pref = str(preferences.get("named_category", "")).strip()
+        if named_category_pref and category == named_category_pref:
+            score += 2.0
+            reason_codes.append("same_category")
+
         # Base category score (prefer drink categories)
         if category in drink_categories:
             score += 0.5
@@ -359,9 +414,7 @@ def search_menu_by_preferences(
         try:
             promos = load_promotion_margins()
             active = promos[
-                (promos["store_id"] == store_id)
-                & (promos["start_date"] <= date)
-                & (promos["end_date"] >= date)
+                (promos["store_id"] == store_id) & (promos["start_date"] <= date) & (promos["end_date"] >= date)
             ]
             promo_items = set(active["item_name"].str.lower().tolist())
             for c in scored:
@@ -502,12 +555,8 @@ def calculate_staffing_gap(store_id: str, date: str, hour: int) -> dict:
 # ---------------------------------------------------------------------------
 
 # Regex patterns for common order tokens
-_SIZE_PATTERN = re.compile(
-    r"\b(short|tall|grande|venti|trenta|small|medium|large|extra large|xl)\b", re.IGNORECASE
-)
-_TEMP_PATTERN = re.compile(
-    r"\b(hot|iced|cold|warm|frozen|blended)\b", re.IGNORECASE
-)
+_SIZE_PATTERN = re.compile(r"\b(short|tall|grande|venti|trenta|small|medium|large|extra large|xl)\b", re.IGNORECASE)
+_TEMP_PATTERN = re.compile(r"\b(hot|iced|cold|warm|frozen|blended)\b", re.IGNORECASE)
 _MILK_PATTERN = re.compile(
     r"\b(whole milk|2% milk|nonfat milk|skim milk|oat milk|almond milk|soy milk|coconut milk|"
     r"oatmilk|almond|soy|coconut|nonfat|skim|whole|2%|half.?and.?half)\b",
@@ -557,18 +606,48 @@ _MILK_NORMALIZE = {
 _QTY_NORMALIZE = {"one": 1, "two": 2, "three": 3, "four": 4, "1": 1, "2": 2, "3": 3, "4": 4}
 
 _CUSTOMIZATION_TERMS = (
-    "extra shot", "extra shots", "no whip", "light ice", "no ice", "extra ice",
-    "sugar free", "less sugar", "no syrup", "double blended", "extra foam",
-    "no foam", "light roast", "bold", "decaf", "half-caf",
+    "extra shot",
+    "extra shots",
+    "no whip",
+    "light ice",
+    "no ice",
+    "extra ice",
+    "sugar free",
+    "less sugar",
+    "no syrup",
+    "double blended",
+    "extra foam",
+    "no foam",
+    "light roast",
+    "bold",
+    "decaf",
+    "half-caf",
 )
 _SYRUP_TERMS = (
-    "vanilla", "caramel", "hazelnut", "cinnamon", "toffee nut", "brown sugar",
-    "lavender", "raspberry", "classic syrup", "mocha sauce", "white mocha",
-    "pumpkin spice", "peppermint",
+    "vanilla",
+    "caramel",
+    "hazelnut",
+    "cinnamon",
+    "toffee nut",
+    "brown sugar",
+    "lavender",
+    "raspberry",
+    "classic syrup",
+    "mocha sauce",
+    "white mocha",
+    "pumpkin spice",
+    "peppermint",
 )
 _TOPPING_TERMS = (
-    "whipped cream", "whip", "cinnamon powder", "nutmeg", "caramel drizzle",
-    "mocha drizzle", "cold foam", "sweet cream", "strawberry puree",
+    "whipped cream",
+    "whip",
+    "cinnamon powder",
+    "nutmeg",
+    "caramel drizzle",
+    "mocha drizzle",
+    "cold foam",
+    "sweet cream",
+    "strawberry puree",
 )
 
 
@@ -654,8 +733,7 @@ def build_and_validate_order(
     # Strip punctuation
     cleaned = re.sub(r"[,.;:!?()\-]", " ", cleaned)
     # Strip polite filler phrases (multi-word — done as literal substring)
-    for filler in ("please", "can i get", "can i have", "i would like", "i'd like",
-                   "i want", "give me", "could i get"):
+    for filler in ("please", "can i get", "can i have", "i would like", "i'd like", "i want", "give me", "could i get"):
         cleaned = cleaned.replace(filler, " ")
     # Strip connector words (whole-word matches only)
     for word in ("with", "and", "or", "the", "of", "for", "to", "a", "an", "one"):
@@ -723,8 +801,13 @@ def build_and_validate_order(
 
     # Required field checks for beverages
     drinks_that_need_size = {
-        "Hot Coffee", "Cold Coffee", "Frappuccino", "Iced Tea",
-        "Hot Tea", "Hot Drinks", "Cold Drinks",
+        "Hot Coffee",
+        "Cold Coffee",
+        "Frappuccino",
+        "Iced Tea",
+        "Hot Tea",
+        "Hot Drinks",
+        "Cold Drinks",
     }
     is_drink = True  # default assumption unless we know it's food
     if resolved_item:
@@ -754,7 +837,9 @@ def build_and_validate_order(
     # Build follow-up question for missing required fields
     follow_up_question: Optional[str] = None
     if "size" in missing_fields and "temperature" in missing_fields:
-        follow_up_question = "What size and temperature would you like — hot or iced, and Short / Tall / Grande / Venti?"
+        follow_up_question = (
+            "What size and temperature would you like — hot or iced, and Short / Tall / Grande / Venti?"
+        )
     elif "size" in missing_fields:
         follow_up_question = "What size would you like — Short, Tall, Grande, or Venti?"
     elif "temperature" in missing_fields:
@@ -806,7 +891,5 @@ def build_and_validate_order(
         ],
         warnings=all_warnings,
         human_review_required=bool(allergy_match),
-        next_actions=(
-            ["ask_follow_up_question"] if follow_up_question else ["confirm_order"]
-        ),
+        next_actions=(["ask_follow_up_question"] if follow_up_question else ["confirm_order"]),
     )

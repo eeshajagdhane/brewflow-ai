@@ -22,6 +22,9 @@ __pycache__
 *.html
 # but DO track the orchestrator's source HTML template (rendered at request time)
 !scripts/orchestrator_ui.html
+# track Flask UI templates
+!ui/templates/
+!ui/templates/*.html
 
 # Others
 Makefile
