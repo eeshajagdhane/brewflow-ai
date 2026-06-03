@@ -52,13 +52,19 @@ def test_index_page_renders(client):
     r = client.get("/")
     assert r.status_code == 200
     body = r.get_data(as_text=True)
-    # Sanity: the page contains the title, the tab nav, and the simulated-data note
+    # Sanity: the page contains the title, the tab nav, and the simulated-data note.
+    # "Daily Dashboard" is the main tab label; "Full Workflow" still appears inside
+    # the collapsible Connected Workflow Demo section and the run button.
     assert "BrewFlow AI" in body
     assert "Operations Console" in body
-    assert "Full Workflow" in body
+    assert "Daily Dashboard" in body, "Daily Dashboard tab must be present"
+    assert "Full Workflow" in body, "Full Workflow demo section must still be present"
     assert "Simulated Starbucks branch prototype" in body, (
         "simulated-data disclaimer must be visible on the page"
     )
+    # Final Order Builder removed from sidebar nav but the view and API remain
+    assert "view-order" in body, "Order builder view must still exist in DOM for Barista View"
+    assert "Final Order Builder" in body, "Final Order Builder heading still in DOM"
 
 
 # ---------------------------------------------------------------------------

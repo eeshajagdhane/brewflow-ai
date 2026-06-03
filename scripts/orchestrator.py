@@ -118,6 +118,13 @@ def _extract_preferences_from_text(text: str, base: Optional[dict] = None) -> di
     ):
         base["non_coffee"] = True
 
+    # Bakery / food intent — restrict to food categories (kept conservative so
+    # drink names like "Sugar Cookie ... Latte" don't accidentally trigger it).
+    if "food_only" not in base and re.search(
+        r"\b(bakery|pastry|pastries|croissant|muffin|bagel|scone|danish|sandwich|snacks?|food)\b", t
+    ):
+        base["food_only"] = True
+
     # Calories
     if "low_calorie" not in base and re.search(r"\b(low.?cal\w*|skinny|diet|lean|under \d+ calories)\b", t):
         base["low_calorie"] = True

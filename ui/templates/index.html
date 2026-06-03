@@ -11,24 +11,7 @@
 <!-- ============================================================
      STARTUP: STORE SELECTION (shown before anything else)
 ============================================================ -->
-<div id="startup-modal" class="modal-backdrop" style="z-index:300">
-  <div class="modal" style="max-width:400px;text-align:center">
-    <div style="font-size:54px;margin-bottom:14px;line-height:1">☕</div>
-    <h2 style="margin:0 0 6px;font-size:22px;color:var(--coffee-dark);font-family:Georgia,serif;font-weight:700">BrewFlow AI</h2>
-    <p style="color:var(--neutral-500);font-size:13px;margin:0 0 24px;line-height:1.5">
-      Operations Console · Milestone 04<br>
-      <span style="font-size:12px">Select your store to continue</span>
-    </p>
-    <div class="store-select-list">
-      <button class="store-select-btn" data-store="SD001" type="button">🏙️ SD001 — San Diego Downtown</button>
-      <button class="store-select-btn" data-store="SD002" type="button">🛍️ SD002 — Mission Valley</button>
-      <button class="store-select-btn" data-store="SD003" type="button">🌊 SD003 — La Jolla</button>
-    </div>
-    <p style="margin:18px 0 0;font-size:11px;color:var(--neutral-400)">
-      Simulated branch — no proprietary Starbucks data
-    </p>
-  </div>
-</div>
+<!-- startup-modal removed: store selection moved to the topbar dropdown -->
 
 <!-- ============================================================
      MANAGER PASSWORD GATE
@@ -63,15 +46,32 @@
     <div class="logo">☕</div>
     <div class="brand-text">
       <h1 class="brand-name">BrewFlow AI</h1>
-      <div class="brand-subtitle">Operations Console · Milestone 04</div>
+      <div class="brand-subtitle">Operations Console</div>
       <div class="sim-chip">
         <span class="sim-dot"></span>
-        Simulated branch prototype — no proprietary Starbucks data
+        Simulated Starbucks branch prototype — no proprietary data
       </div>
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:12px">
-    <div id="global-store-label" class="store-pill">No store selected</div>
+    <div class="global-store-wrap">
+      <span class="global-store-icon">🏪</span>
+      <select id="global-store-select" class="global-store-select" aria-label="Select store">
+        <option value="" disabled selected>Select store…</option>
+        <option value="SD001">SD001 — Gaslamp Quarter</option>
+        <option value="SD002">SD002 — Pacific Beach</option>
+        <option value="SD003">SD003 — UCSD Campus</option>
+        <option value="SD004">SD004 — Mission Valley</option>
+        <option value="SD005">SD005 — North Park</option>
+        <option value="SD006">SD006 — UTC Westfield</option>
+        <option value="SD007">SD007 — Hillcrest</option>
+        <option value="SD008">SD008 — SD Airport</option>
+        <option value="SD009">SD009 — Del Mar</option>
+        <option value="SD010">SD010 — Chula Vista</option>
+      </select>
+    </div>
+    <!-- ghost kept for JS back-compat; hidden from view -->
+    <div id="global-store-label" class="store-pill" hidden></div>
     <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle navigation">☰</button>
   </div>
 </header>
@@ -86,9 +86,9 @@
       <div class="nav-group">
         <div class="nav-group-label">Main Demo</div>
         <button class="nav-item main-path active" data-tab="full">
-          <span class="nav-icon">🔄</span>
-          <span class="nav-label">Full Workflow</span>
-          <span class="pill-main">START</span>
+          <span class="nav-icon">📊</span>
+          <span class="nav-label">Daily Dashboard</span>
+          <span class="pill-main">MAIN</span>
         </button>
       </div>
       <div class="nav-group">
@@ -101,10 +101,8 @@
           <span class="nav-icon">🧋</span>
           <span class="nav-label">Barista</span>
         </button>
-        <button class="nav-item" data-tab="order">
-          <span class="nav-icon">📝</span>
-          <span class="nav-label">Order Builder</span>
-        </button>
+        <!-- Final Order Builder removed from main nav; order-building is now inside Barista View.
+             The view-order DOM element and run-order handler remain for backward compatibility. -->
       </div>
       <div class="nav-group">
         <div class="nav-group-label">Review &amp; Evidence</div>
@@ -113,14 +111,21 @@
           <span class="nav-label">Evidence Center</span>
           <span class="badge-count" id="evi-count" hidden>0</span>
         </button>
-        <!-- ghost element — app.js needs rev-count in the DOM -->
-        <span id="rev-count" hidden></span>
+        <button class="nav-item" data-tab="review">
+          <span class="nav-icon">✅</span>
+          <span class="nav-label">Review Queue</span>
+          <span class="badge-count" id="rev-count" hidden>0</span>
+        </button>
+        <button class="nav-item" id="nav-audit-log" data-tab="audit-log">
+          <span class="nav-icon">📋</span>
+          <span class="nav-label">Audit Log</span>
+        </button>
       </div>
       <div class="nav-group">
         <div class="nav-group-label">Operations</div>
         <button class="nav-item" data-tab="orderqueue">
           <span class="nav-icon">🎯</span>
-          <span class="nav-label">Order Queue</span>
+          <span class="nav-label">Orders</span>
           <span class="badge-count" id="oq-count" hidden>0</span>
         </button>
       </div>
@@ -137,42 +142,43 @@
   <main class="main">
 
     <!-- ======================== FULL WORKFLOW VIEW ======================== -->
+    <!-- ======================== DAILY DASHBOARD VIEW ======================== -->
     <div class="view active" id="view-full">
       <div class="view-head">
-        <h2>🔄 Full Workflow</h2>
-        <p class="muted">Run the complete BrewFlow pipeline: manager readiness → barista recommendation → order building → human review.</p>
+        <h2>📊 Daily Dashboard</h2>
+        <p class="muted">Today's operational snapshot — store readiness, orders, evidence, and review at a glance.</p>
       </div>
 
-      <ol class="progress" id="full-progress">
-        <li class="step" data-step="input"><span class="step-num">1</span> Input</li>
-        <li class="step" data-step="manager_readiness"><span class="step-num">2</span> Manager</li>
-        <li class="step" data-step="barista_recommendation"><span class="step-num">3</span> Barista</li>
-        <li class="step" data-step="order_builder"><span class="step-num">4</span> Order</li>
-        <li class="step" data-step="complete"><span class="step-num">5</span> Review</li>
-      </ol>
-
+      <!-- ── Run Daily Summary inputs ── -->
       <div class="card">
-        <h3>Run Parameters</h3>
+        <h3>Run Daily Summary</h3>
         <p class="required-note"><span class="required-mark">*</span> Required fields</p>
         <div class="grid">
           <label>
             <span class="field-label">Store <span class="required-mark">*</span></span>
-            <select id="full-store">
+            <select id="dash-store">
               <option value="" disabled selected>Select store…</option>
-              <option value="SD001">SD001 — San Diego Downtown</option>
-              <option value="SD002">SD002 — Mission Valley</option>
-              <option value="SD003">SD003 — La Jolla</option>
+              <option value="SD001">SD001 — Gaslamp Quarter</option>
+              <option value="SD002">SD002 — Pacific Beach</option>
+              <option value="SD003">SD003 — UCSD Campus</option>
+              <option value="SD004">SD004 — Mission Valley</option>
+              <option value="SD005">SD005 — North Park</option>
+              <option value="SD006">SD006 — UTC Westfield</option>
+              <option value="SD007">SD007 — Hillcrest</option>
+              <option value="SD008">SD008 — SD Airport</option>
+              <option value="SD009">SD009 — Del Mar</option>
+              <option value="SD010">SD010 — Chula Vista</option>
             </select>
-            <span class="field-error" id="full-store-err" hidden></span>
+            <span class="field-error" id="dash-store-err" hidden></span>
           </label>
           <label>
             <span class="field-label">Date <span class="required-mark">*</span></span>
-            <input type="date" id="full-date" value="2024-01-15">
-            <span class="field-error" id="full-date-err" hidden></span>
+            <input type="date" id="dash-date" value="2024-01-15">
+            <span class="field-error" id="dash-date-err" hidden></span>
           </label>
           <label>
             <span class="field-label">Hour <span class="required-mark">*</span></span>
-            <select id="full-hour">
+            <select id="dash-hour">
               <option value="" disabled selected>Select hour…</option>
               <option value="6">06:00</option>
               <option value="7">07:00</option>
@@ -188,66 +194,164 @@
               <option value="17">17:00</option>
               <option value="18">18:00</option>
             </select>
-            <span class="field-error" id="full-hour-err" hidden></span>
-          </label>
-          <label class="full-row">
-            <span class="field-label">Customer Request <span class="required-mark">*</span></span>
-            <input type="text" id="full-request" placeholder="e.g. something cold and sweet">
-            <span class="field-error" id="full-request-err" hidden></span>
-          </label>
-          <label class="full-row">
-            <span class="field-label">Raw Order Text <span class="optional-mark">(optional)</span></span>
-            <input type="text" id="full-raworder" placeholder="e.g. Grande iced caramel macchiato with oat milk">
+            <span class="field-error" id="dash-hour-err" hidden></span>
           </label>
         </div>
-        <fieldset class="prefs">
-          <legend>Customer Preferences (optional)</legend>
-          <div class="grid">
-            <label><span class="field-label">Temperature</span>
-              <input type="text" id="full-pref-temp" placeholder="e.g. iced, hot"></label>
-            <label><span class="field-label">Sweetness</span>
-              <input type="text" id="full-pref-sweet" placeholder="e.g. medium, sweet"></label>
-            <label><span class="field-label">Milk</span>
-              <input type="text" id="full-pref-milk" placeholder="e.g. oat milk, whole"></label>
-            <label><span class="field-label">Caffeine</span>
-              <input type="text" id="full-pref-caffeine" placeholder="e.g. high, medium"></label>
-            <label><span class="field-label">Coffee preference</span>
-              <input type="text" id="full-pref-coffee" placeholder="e.g. coffee, tea, no coffee"></label>
-            <label><span class="field-label">Low calorie</span>
-              <input type="text" id="full-pref-lowcal" placeholder="true / false"></label>
-          </div>
-        </fieldset>
+        <button class="run" id="run-dash" type="button">☀️ Run Daily Summary</button>
+      </div>
 
-        <div class="quickstarts">
-          <h4>Quick Starts — pre-fill a realistic scenario, then click Run</h4>
-          <div class="quickstart-grid">
-            <button class="qs-card" data-quickstart="vanilla-latte" type="button">
-              <span class="qs-emoji">🍦</span>
-              <span class="qs-title">Iced Vanilla Latte</span>
-              <span class="qs-desc">Smooth, lightly sweet, oat milk — morning rush scenario</span>
-            </button>
-            <button class="qs-card" data-quickstart="cold-brew" type="button">
-              <span class="qs-emoji">🥤</span>
-              <span class="qs-title">Sweet Cream Cold Brew</span>
-              <span class="qs-desc">Coffee-forward, high caffeine, mid-morning scenario</span>
-            </button>
-            <button class="qs-card" data-quickstart="brown-sugar" type="button">
-              <span class="qs-emoji">🤎</span>
-              <span class="qs-title">Brown Sugar Oatmilk Espresso</span>
-              <span class="qs-desc">Espresso-based, sweet, oat milk — peak rush scenario</span>
-            </button>
+      <!-- ── Empty state ── -->
+      <div class="empty-state" id="dash-empty">
+        <div class="empty-icon">📊</div>
+        <h3>No summary yet</h3>
+        <p>Select a store, date, and hour, then click <strong>Run Daily Summary</strong> to populate the dashboard.</p>
+      </div>
+
+      <!-- ── Dashboard output (populated after run) ── -->
+      <div id="dash-populated" hidden>
+
+        <!-- Row 1: Summary metric cards -->
+        <div class="dd-metric-row" id="dd-metric-row"></div>
+
+        <!-- Row 2: Visual charts -->
+        <div class="dd-charts-grid" id="dd-charts-grid"></div>
+
+        <!-- Row 3: Written summary -->
+        <div id="dd-summary-cards"></div>
+
+        <!-- Row 4: Quick links -->
+        <div class="card dd-quicklinks-card">
+          <h3>Quick Links</h3>
+          <div class="dd-quicklinks">
+            <button class="dd-ql-btn" data-jump="manager" type="button">👤 Manager View</button>
+            <button class="dd-ql-btn" data-jump="barista" type="button">🧋 Barista View</button>
+            <button class="dd-ql-btn" data-jump="order" type="button">📝 Order Builder</button>
+            <button class="dd-ql-btn" data-jump="orderqueue" type="button">🎯 Orders</button>
+            <button class="dd-ql-btn" data-jump="evidence" type="button">🔍 Evidence Center</button>
+            <button class="dd-ql-btn" data-jump="review" type="button">✅ Review Queue</button>
           </div>
         </div>
-
-        <button class="run" id="run-full" type="button">Run Full Workflow</button>
       </div>
 
-      <div class="empty-state" id="full-empty">
-        <div class="empty-icon">🔄</div>
-        <h3>No run yet</h3>
-        <p>Fill in the parameters above (or pick a Quick Start) and click <strong>Run Full Workflow</strong>.</p>
-      </div>
-      <div id="full-output"></div>
+      <!-- ── Connected Workflow Demo (collapsible, always available) ── -->
+      <details class="dd-demo-section" id="dd-demo-section">
+        <summary>🔗 Connected Workflow Demo <span class="dd-demo-badge">Full Workflow</span></summary>
+        <div class="dd-demo-body">
+          <p class="muted small">Demonstrates the complete BrewFlow AI pipeline: manager readiness → barista recommendation → order building → human review. All outputs are live from the orchestrator — no mocked data.</p>
+
+          <ol class="progress" id="full-progress">
+            <li class="step" data-step="input"><span class="step-num">1</span> Input</li>
+            <li class="step" data-step="manager_readiness"><span class="step-num">2</span> Manager</li>
+            <li class="step" data-step="barista_recommendation"><span class="step-num">3</span> Barista</li>
+            <li class="step" data-step="order_builder"><span class="step-num">4</span> Order</li>
+            <li class="step" data-step="complete"><span class="step-num">5</span> Review</li>
+          </ol>
+
+          <div class="card">
+            <h3>Run Parameters</h3>
+            <div class="grid">
+              <label>
+                <span class="field-label">Store <span class="required-mark">*</span></span>
+                <select id="full-store">
+                  <option value="" disabled selected>Select store…</option>
+                  <option value="SD001">SD001 — Gaslamp Quarter</option>
+                  <option value="SD002">SD002 — Pacific Beach</option>
+                  <option value="SD003">SD003 — UCSD Campus</option>
+                  <option value="SD004">SD004 — Mission Valley</option>
+                  <option value="SD005">SD005 — North Park</option>
+                  <option value="SD006">SD006 — UTC Westfield</option>
+                  <option value="SD007">SD007 — Hillcrest</option>
+                  <option value="SD008">SD008 — SD Airport</option>
+                  <option value="SD009">SD009 — Del Mar</option>
+                  <option value="SD010">SD010 — Chula Vista</option>
+                </select>
+                <span class="field-error" id="full-store-err" hidden></span>
+              </label>
+              <label>
+                <span class="field-label">Date <span class="required-mark">*</span></span>
+                <input type="date" id="full-date" value="2024-01-15">
+                <span class="field-error" id="full-date-err" hidden></span>
+              </label>
+              <label>
+                <span class="field-label">Hour <span class="required-mark">*</span></span>
+                <select id="full-hour">
+                  <option value="" disabled selected>Select hour…</option>
+                  <option value="6">06:00</option>
+                  <option value="7">07:00</option>
+                  <option value="8" selected>08:00</option>
+                  <option value="9">09:00</option>
+                  <option value="10">10:00</option>
+                  <option value="11">11:00</option>
+                  <option value="12">12:00</option>
+                  <option value="13">13:00</option>
+                  <option value="14">14:00</option>
+                  <option value="15">15:00</option>
+                  <option value="16">16:00</option>
+                  <option value="17">17:00</option>
+                  <option value="18">18:00</option>
+                </select>
+                <span class="field-error" id="full-hour-err" hidden></span>
+              </label>
+              <label class="full-row">
+                <span class="field-label">Customer Request <span class="optional-mark">(or use preferences / raw order)</span></span>
+                <input type="text" id="full-request" placeholder="e.g. something cold and sweet">
+                <span class="field-error" id="full-request-err" hidden></span>
+              </label>
+              <label class="full-row">
+                <span class="field-label">Raw Order Text <span class="optional-mark">(optional)</span></span>
+                <input type="text" id="full-raworder" placeholder="e.g. Grande iced caramel macchiato with oat milk">
+              </label>
+            </div>
+            <fieldset class="prefs">
+              <legend>Customer Preferences (optional)</legend>
+              <div class="grid">
+                <label><span class="field-label">Temperature</span>
+                  <input type="text" id="full-pref-temp" placeholder="e.g. iced, hot"></label>
+                <label><span class="field-label">Sweetness</span>
+                  <input type="text" id="full-pref-sweet" placeholder="e.g. medium, sweet"></label>
+                <label><span class="field-label">Milk</span>
+                  <input type="text" id="full-pref-milk" placeholder="e.g. oat milk, whole"></label>
+                <label><span class="field-label">Caffeine</span>
+                  <input type="text" id="full-pref-caffeine" placeholder="e.g. high, medium"></label>
+                <label><span class="field-label">Coffee preference</span>
+                  <input type="text" id="full-pref-coffee" placeholder="e.g. coffee, tea, no coffee"></label>
+                <label><span class="field-label">Low calorie</span>
+                  <input type="text" id="full-pref-lowcal" placeholder="true / false"></label>
+              </div>
+            </fieldset>
+
+            <div class="quickstarts">
+              <h4>Quick Starts — pre-fill a realistic scenario, then click Run</h4>
+              <div class="quickstart-grid">
+                <button class="qs-card" data-quickstart="vanilla-latte" type="button">
+                  <span class="qs-emoji">🍦</span>
+                  <span class="qs-title">Iced Vanilla Latte</span>
+                  <span class="qs-desc">Smooth, lightly sweet, oat milk — morning rush scenario</span>
+                </button>
+                <button class="qs-card" data-quickstart="cold-brew" type="button">
+                  <span class="qs-emoji">🥤</span>
+                  <span class="qs-title">Sweet Cream Cold Brew</span>
+                  <span class="qs-desc">Coffee-forward, high caffeine, mid-morning scenario</span>
+                </button>
+                <button class="qs-card" data-quickstart="brown-sugar" type="button">
+                  <span class="qs-emoji">🤎</span>
+                  <span class="qs-title">Brown Sugar Oatmilk Espresso</span>
+                  <span class="qs-desc">Espresso-based, sweet, oat milk — peak rush scenario</span>
+                </button>
+              </div>
+            </div>
+
+            <button class="run" id="run-full" type="button">Run Full Workflow</button>
+          </div>
+
+          <div class="empty-state" id="full-empty" hidden>
+            <div class="empty-icon">🔗</div>
+            <h3>No run yet</h3>
+            <p>Fill in the parameters above (or pick a Quick Start) and click <strong>Run Full Workflow</strong>.</p>
+          </div>
+          <div id="full-output"></div>
+        </div>
+      </details>
     </div>
 
     <!-- ======================== MANAGER VIEW ======================== -->
@@ -264,9 +368,16 @@
             <span class="field-label">Store <span class="required-mark">*</span></span>
             <select id="mgr-store">
               <option value="" disabled selected>Select store…</option>
-              <option value="SD001">SD001 — San Diego Downtown</option>
-              <option value="SD002">SD002 — Mission Valley</option>
-              <option value="SD003">SD003 — La Jolla</option>
+              <option value="SD001">SD001 — Gaslamp Quarter</option>
+              <option value="SD002">SD002 — Pacific Beach</option>
+              <option value="SD003">SD003 — UCSD Campus</option>
+              <option value="SD004">SD004 — Mission Valley</option>
+              <option value="SD005">SD005 — North Park</option>
+              <option value="SD006">SD006 — UTC Westfield</option>
+              <option value="SD007">SD007 — Hillcrest</option>
+              <option value="SD008">SD008 — SD Airport</option>
+              <option value="SD009">SD009 — Del Mar</option>
+              <option value="SD010">SD010 — Chula Vista</option>
             </select>
             <span class="field-error" id="mgr-store-err" hidden></span>
           </label>
@@ -307,59 +418,152 @@
       <div id="manager-action-sections"></div>
     </div>
 
-    <!-- ======================== BARISTA VIEW (revamped) ======================== -->
+    <!-- ======================== BARISTA VIEW ======================== -->
     <div class="view" id="view-barista">
       <div class="view-head">
-        <h2>🧋 Barista Recommendation</h2>
-        <p class="muted">Get an inventory-aware drink recommendation. Select preferences below and describe the customer's request.</p>
+        <h2>🧋 Barista View</h2>
+        <p class="muted">Your shift screen for helping customers — load your briefing, then recommend a drink or build an order.</p>
       </div>
 
-      <div class="card">
-        <h3>What is the customer looking for?</h3>
-        <p class="required-note"><span class="required-mark">*</span> Required</p>
+      <!-- ── Section 1: Store Context ─────────────────────────────────── -->
+      <div class="card bar-section">
+        <h3 class="bar-section-title">📍 Store Context</h3>
+        <div class="grid">
+          <label>
+            <span class="field-label">Store <span class="required-mark">*</span></span>
+            <select id="bar-store">
+              <option value="" disabled selected>Select store…</option>
+              <option value="SD001">SD001 — Gaslamp Quarter</option>
+              <option value="SD002">SD002 — Pacific Beach</option>
+              <option value="SD003">SD003 — UCSD Campus</option>
+              <option value="SD004">SD004 — Mission Valley</option>
+              <option value="SD005">SD005 — North Park</option>
+              <option value="SD006">SD006 — UTC Westfield</option>
+              <option value="SD007">SD007 — Hillcrest</option>
+              <option value="SD008">SD008 — SD Airport</option>
+              <option value="SD009">SD009 — Del Mar</option>
+              <option value="SD010">SD010 — Chula Vista</option>
+            </select>
+            <span class="field-error" id="bar-store-err" hidden></span>
+          </label>
+          <label>
+            <span class="field-label">Date <span class="required-mark">*</span></span>
+            <input type="date" id="bar-date" value="2024-01-15">
+            <span class="field-error" id="bar-date-err" hidden></span>
+          </label>
+          <label>
+            <span class="field-label">Hour <span class="required-mark">*</span></span>
+            <select id="bar-hour">
+              <option value="" disabled selected>Select hour…</option>
+              <option value="6">06:00</option>
+              <option value="7">07:00</option>
+              <option value="8" selected>08:00</option>
+              <option value="9">09:00</option>
+              <option value="10">10:00</option>
+              <option value="11">11:00</option>
+              <option value="12">12:00</option>
+              <option value="13">13:00</option>
+              <option value="14">14:00</option>
+              <option value="15">15:00</option>
+              <option value="16">16:00</option>
+              <option value="17">17:00</option>
+              <option value="18">18:00</option>
+            </select>
+            <span class="field-error" id="bar-hour-err" hidden></span>
+          </label>
+        </div>
+        <button class="run bar-briefing-btn" id="load-briefing" type="button">📋 Load Barista Briefing</button>
+      </div>
 
-        <!-- Customer request -->
+      <!-- ── Section 2: Barista Briefing ───────────────────────────────── -->
+      <div class="card bar-section" id="bar-briefing-section">
+        <h3 class="bar-section-title">☀️ Today's Barista Briefing</h3>
+        <div class="empty-state bar-briefing-empty" id="bar-briefing-empty">
+          <div class="empty-icon">📋</div>
+          <p>Select store, date, and hour above, then click <strong>Load Barista Briefing</strong>.</p>
+        </div>
+        <div id="bar-briefing-content" hidden></div>
+      </div>
+
+      <!-- ── Section 3: Customer Request & Drink Preferences ───────────── -->
+      <div class="card bar-section">
+        <h3 class="bar-section-title">👤 Customer Request &amp; Drink Preferences</h3>
+        <p class="required-note">Provide a request <strong>or</strong> select at least one preference below — both are optional.</p>
+
         <div class="grid">
           <label class="full-row">
-            <span class="field-label">Customer Request <span class="required-mark">*</span></span>
+            <span class="field-label">Customer Request <span class="optional-mark">(optional)</span></span>
             <input type="text" id="bar-request"
                    placeholder="e.g. something cold and sweet, not too strong">
             <span class="field-error" id="bar-request-err" hidden></span>
           </label>
         </div>
 
-        <!-- ── Preference chips ── -->
         <div class="pref-chips-section">
-          <div class="pref-chips-label">Preferences <span class="optional-mark" style="text-transform:none;font-size:11px">(tap to select — tap again to deselect)</span></div>
+          <div class="pref-chips-label">Drink Preferences <span class="optional-mark" style="text-transform:none;font-size:11px">(tap to select — tap again to deselect)</span></div>
 
           <div class="pref-chips-grid">
-            <!-- Temperature -->
             <span class="pref-group-divider">Temperature</span>
             <button class="pref-chip" data-group="temp" data-pref="temp" data-value="iced" type="button">🧊 Iced</button>
             <button class="pref-chip" data-group="temp" data-pref="temp" data-value="hot" type="button">☕ Hot</button>
 
-            <!-- Drink type -->
+            <!-- Size -->
+            <span class="pref-group-divider">
+              Size
+              <span class="size-guide-toggle" id="size-guide-toggle" title="Show size guide">ⓘ</span>
+            </span>
+            <button class="pref-chip size-chip" data-group="size" data-pref="size" data-value="Short"
+                    data-hot-only="true" type="button" title="Hot 8 oz · hot drinks / kid size">Short</button>
+            <button class="pref-chip size-chip" data-group="size" data-pref="size" data-value="Tall"
+                    type="button" title="Hot 12 oz · Cold 12 oz · small">Tall</button>
+            <button class="pref-chip size-chip" data-group="size" data-pref="size" data-value="Grande"
+                    type="button" title="Hot 16 oz · Cold 16 oz · medium">Grande</button>
+            <button class="pref-chip size-chip" data-group="size" data-pref="size" data-value="Venti"
+                    type="button" title="Hot 20 oz · Cold 24 oz · large">Venti</button>
+            <button class="pref-chip size-chip" data-group="size" data-pref="size" data-value="Trenta"
+                    data-cold-only="true" type="button" title="Cold 30 oz · cold drinks only · extra-large">Trenta</button>
+            <!-- Size guide collapsible -->
+            <div id="bar-size-guide" class="size-guide" hidden>
+              <table class="size-table">
+                <thead><tr><th>Size</th><th>Hot</th><th>Cold / Iced</th><th>Notes</th></tr></thead>
+                <tbody>
+                  <tr><td>Short</td><td>8 oz</td><td>—</td><td>Hot only · kid/extra-small</td></tr>
+                  <tr><td>Tall</td><td>12 oz</td><td>12 oz</td><td>Small</td></tr>
+                  <tr><td>Grande</td><td>16 oz</td><td>16 oz</td><td>Medium (default)</td></tr>
+                  <tr><td>Venti</td><td>20 oz</td><td>24 oz</td><td>Large · oz differ by temp</td></tr>
+                  <tr><td>Trenta</td><td>—</td><td>30 oz</td><td>Cold drinks only · extra-large</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <span class="field-error" id="bar-size-compat-warn" hidden style="display:block;width:100%"></span>
+
             <span class="pref-group-divider">Drink Type</span>
             <button class="pref-chip" data-group="coffee" data-pref="coffee" data-value="coffee" type="button">☕ Coffee</button>
             <button class="pref-chip" data-group="coffee" data-pref="coffee" data-value="non-coffee" type="button">🍵 Non-Coffee</button>
             <button class="pref-chip" data-group="coffee" data-pref="coffee" data-value="seasonal" type="button">🍂 Seasonal</button>
             <button class="pref-chip" data-group="none" data-pref="food" data-value="food" type="button">🥐 Food / Bakery</button>
 
-            <!-- Caffeine -->
+            <span class="pref-group-divider">Milk</span>
+            <button class="pref-chip" data-group="milk" data-pref="milk" data-value="whole milk" type="button">🥛 Whole Milk</button>
+            <button class="pref-chip" data-group="milk" data-pref="milk" data-value="oat milk" type="button">🌾 Oat Milk</button>
+            <button class="pref-chip" data-group="milk" data-pref="milk" data-value="almond milk" type="button">🌰 Almond Milk</button>
+            <button class="pref-chip" data-group="milk" data-pref="milk" data-value="soy milk" type="button">🫘 Soy Milk</button>
+            <button class="pref-chip" data-group="milk" data-pref="milk" data-value="coconut milk" type="button">🥥 Coconut Milk</button>
+            <button class="pref-chip" data-group="milk" data-pref="milk" data-value="nonfat" type="button">🏃 Nonfat</button>
+
             <span class="pref-group-divider">Caffeine</span>
             <button class="pref-chip" data-group="caffeine" data-pref="caffeine" data-value="high" type="button">⚡ High Caffeine</button>
+            <button class="pref-chip" data-group="caffeine" data-pref="caffeine" data-value="medium" type="button">🔆 Medium Caffeine</button>
             <button class="pref-chip" data-group="caffeine" data-pref="caffeine" data-value="low" type="button">🌿 Low Caffeine</button>
             <button class="pref-chip" data-group="caffeine" data-pref="caffeine" data-value="none" type="button">💤 Caffeine-Free</button>
 
-            <!-- Other -->
-            <span class="pref-group-divider">Other</span>
-            <button class="pref-chip" data-group="none" data-pref="lowcal" data-value="true" type="button">🥗 Low Calorie</button>
+            <span class="pref-group-divider">Sweetness &amp; Other</span>
             <button class="pref-chip" data-group="none" data-pref="sweet" data-value="sweet" type="button">🍯 Sweet</button>
+            <button class="pref-chip" data-group="none" data-pref="lowcal" data-value="true" type="button">🥗 Low Calorie</button>
             <button class="pref-chip" data-group="none" data-pref="glutenfree" data-value="glutenfree" type="button">🌾 Gluten-Free</button>
             <button class="pref-chip allergy-chip" data-group="none" data-pref="allergy" data-value="allergy" type="button" id="allergy-toggle-btn">⚠️ Allergy</button>
           </div>
 
-          <!-- Allergy text input — revealed when Allergy chip is clicked -->
           <div id="bar-allergy-section" class="allergy-reveal" hidden>
             <label>
               ⚠️ Describe the allergy or dietary restriction
@@ -368,50 +572,129 @@
           </div>
         </div>
 
-        <!-- Hidden inputs that app.js's readPrefs("bar") reads — set by chip clicks -->
+        <div class="refine-wrap">
+          <div class="pref-chips-label" style="margin-top:20px">Customizations <span class="optional-mark" style="text-transform:none;font-size:11px">(optional — appended as notes to the recommendation)</span></div>
+          <p class="refine-intro muted small" style="margin-top:4px">Select espresso style, syrups, or cold foam preferences.</p>
+
+          <details class="refine-section">
+            <summary>☕ Espresso Options</summary>
+            <div class="refine-body">
+              <span class="pref-group-divider">Coffee Blend <span class="refine-hint">(pick one)</span></span>
+              <button class="refine-chip" data-refine-group="blend" data-refine-single data-note="Signature Roast espresso" type="button" title="Dark, bold, and caramelly sweet.">Signature Roast</button>
+              <button class="refine-chip" data-refine-group="blend" data-refine-single data-note="Blonde Roast espresso" type="button" title="Light, bright, smooth, and naturally sweet.">Blonde Roast</button>
+              <button class="refine-chip" data-refine-group="blend" data-refine-single data-note="Decaf Roast espresso, decaf" type="button" title="The signature flavor without the caffeine.">Decaf Roast</button>
+              <button class="refine-chip" data-refine-group="blend" data-refine-single data-note="Partial Decaf espresso (e.g. 1/2 or 2/3 decaf)" type="button" title="Customized split options like 1/2 or 2/3 decaf.">Partial Decaf</button>
+              <span class="pref-group-divider">Shot Style <span class="refine-hint">(pick one)</span></span>
+              <button class="refine-chip" data-refine-group="shot" data-refine-single data-note="standard shot" type="button">Standard</button>
+              <button class="refine-chip" data-refine-group="shot" data-refine-single data-note="ristretto shot" type="button">Ristretto</button>
+              <button class="refine-chip" data-refine-group="shot" data-refine-single data-note="long shot" type="button">Long Shot</button>
+              <button class="refine-chip" data-refine-group="shot" data-refine-single data-note="updosed (extra grounds)" type="button">Updosed</button>
+              <span class="pref-group-divider">Drink Style</span>
+              <button class="refine-chip" data-refine-group="drink" data-note="doppio" type="button">Doppio</button>
+              <button class="refine-chip" data-refine-group="drink" data-note="americano" type="button">Americano</button>
+              <button class="refine-chip" data-refine-group="drink" data-note="macchiato" type="button">Macchiato</button>
+              <button class="refine-chip" data-refine-group="drink" data-note="con panna (whipped cream)" type="button">Con Panna</button>
+              <button class="refine-chip" data-refine-group="drink" data-note="flat white / cortado" type="button">Flat White / Cortado</button>
+              <button class="refine-chip" data-refine-group="drink" data-note="latte / cappuccino" type="button">Latte / Cappuccino</button>
+            </div>
+          </details>
+
+          <details class="refine-section">
+            <summary>🍯 Syrups &amp; Sauces</summary>
+            <div class="refine-body">
+              <span class="pref-group-divider">Core Syrups</span>
+              <button class="refine-chip" data-refine-group="syrup" data-note="vanilla syrup" type="button">Vanilla</button>
+              <button class="refine-chip" data-refine-group="syrup" data-note="caramel syrup" type="button">Caramel</button>
+              <button class="refine-chip" data-refine-group="syrup" data-note="brown sugar syrup" type="button">Brown Sugar</button>
+              <button class="refine-chip" data-refine-group="syrup" data-note="hazelnut syrup" type="button">Hazelnut</button>
+              <button class="refine-chip" data-refine-group="syrup" data-note="cinnamon dolce syrup" type="button">Cinnamon Dolce</button>
+              <button class="refine-chip" data-refine-group="syrup" data-note="peppermint syrup" type="button">Peppermint</button>
+              <button class="refine-chip" data-refine-group="syrup" data-note="toffee nut syrup" type="button">Toffee Nut</button>
+              <button class="refine-chip" data-refine-group="syrup" data-note="liquid cane sugar" type="button">Liquid Cane Sugar</button>
+              <button class="refine-chip" data-refine-group="syrup" data-note="classic syrup" type="button">Classic</button>
+              <button class="refine-chip" data-refine-group="syrup" data-note="honey blend" type="button">Honey Blend</button>
+              <span class="pref-group-divider">Sugar Free</span>
+              <button class="refine-chip" data-refine-group="syrup" data-note="sugar free vanilla syrup" type="button">Sugar Free Vanilla</button>
+              <span class="pref-group-divider">Sauces</span>
+              <button class="refine-chip" data-refine-group="sauce" data-note="mocha sauce" type="button">Mocha</button>
+              <button class="refine-chip" data-refine-group="sauce" data-note="white chocolate mocha sauce" type="button">White Chocolate Mocha</button>
+              <button class="refine-chip" data-refine-group="sauce" data-note="dark caramel sauce" type="button">Dark Caramel</button>
+              <div class="refine-seasonal" id="bar-seasonal-syrups" hidden>
+                <span class="pref-group-divider">Seasonal <span class="refine-hint">(seasonal selection active)</span></span>
+                <button class="refine-chip seasonal-chip" data-refine-group="syrup" data-note="pumpkin spice sauce" type="button">Pumpkin Spice Sauce</button>
+                <button class="refine-chip seasonal-chip" data-refine-group="syrup" data-note="sugar cookie syrup" type="button">Sugar Cookie Syrup</button>
+                <button class="refine-chip seasonal-chip" data-refine-group="syrup" data-note="gingerbread syrup" type="button">Gingerbread Syrup</button>
+                <button class="refine-chip seasonal-chip" data-refine-group="syrup" data-note="caramel brulée sauce" type="button">Caramel Brulée Sauce</button>
+                <button class="refine-chip seasonal-chip" data-refine-group="syrup" data-note="chestnut praline syrup" type="button">Chestnut Praline Syrup</button>
+              </div>
+            </div>
+          </details>
+
+          <details class="refine-section">
+            <summary>🌫️ Cold Foam</summary>
+            <div class="refine-body">
+              <button class="refine-chip" data-refine-group="foam" data-note="vanilla sweet cream cold foam" type="button">Vanilla Sweet Cream</button>
+              <button class="refine-chip" data-refine-group="foam" data-note="salted caramel cold foam" type="button">Salted Caramel</button>
+              <button class="refine-chip" data-refine-group="foam" data-note="chocolate cream cold foam" type="button">Chocolate Cream</button>
+              <button class="refine-chip" data-refine-group="foam" data-note="customizable cold foam (custom syrup or powder)" type="button">Customizable Foam</button>
+              <span class="refine-seasonal" id="bar-seasonal-foams" hidden>
+                <button class="refine-chip seasonal-chip" data-refine-group="foam" data-note="pumpkin cream cold foam" type="button">Pumpkin Cream</button>
+                <button class="refine-chip seasonal-chip" data-refine-group="foam" data-note="matcha cream cold foam" type="button">Matcha Cream</button>
+              </span>
+            </div>
+          </details>
+        </div>
+
+        <!-- Pref hidden inputs — read by readPrefs("bar") -->
         <input type="hidden" id="bar-pref-temp">
+        <input type="hidden" id="bar-pref-size">
         <input type="hidden" id="bar-pref-sweet">
         <input type="hidden" id="bar-pref-milk">
         <input type="hidden" id="bar-pref-caffeine">
         <input type="hidden" id="bar-pref-coffee">
         <input type="hidden" id="bar-pref-lowcal">
-
-        <!-- Hidden operational fields — set from global store selection -->
-        <input type="hidden" id="bar-store" value="SD001">
-        <input type="hidden" id="bar-date" value="2024-01-15">
-        <input type="hidden" id="bar-hour" value="8">
-
-        <button class="run" id="run-barista" type="button">Get Recommendation</button>
+        <input type="hidden" id="bar-pref-food">
       </div>
 
+      <!-- ── Section 4: Raw Final Order ────────────────────────────────── -->
+      <div class="card bar-section">
+        <h3 class="bar-section-title">📝 Raw Final Order <span class="optional-mark" style="font-size:13px;font-weight:500">(optional)</span></h3>
+        <p class="muted small">Use this when the customer has already chosen a drink, or after accepting a recommendation.</p>
+        <div class="grid">
+          <label class="full-row">
+            <span class="field-label">Raw Final Order</span>
+            <input type="text" id="bar-raworder" placeholder="e.g. grande iced vanilla latte with oat milk and light ice">
+            <span class="field-error" id="bar-raworder-err" hidden></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- ── Section 5: Actions ─────────────────────────────────────────── -->
+      <div class="bar-actions-row">
+        <button class="run bar-action-btn primary-action" id="run-barista" type="button">🧋 Recommend Drink</button>
+        <button class="run bar-action-btn" id="run-barista-order" type="button">📝 Build Final Order</button>
+        <button class="run bar-action-btn combo-action" id="run-barista-both" type="button">⚡ Recommend + Build</button>
+      </div>
+
+      <!-- ── Section 6: Results ─────────────────────────────────────────── -->
       <div class="empty-state" id="barista-empty">
         <div class="empty-icon">🧋</div>
-        <h3>No recommendation yet</h3>
-        <p>Describe the customer's request, select preferences, and click <strong>Get Recommendation</strong>.</p>
+        <h3>No results yet</h3>
+        <p>Select preferences and click one of the action buttons above.</p>
       </div>
 
       <div id="barista-output"></div>
+      <div id="barista-order-output"></div>
 
-      <!-- Further refinement options — revealed after first recommendation -->
-      <div id="bar-further-options" class="card further-options-section" hidden>
-        <h3>Refine the Recommendation</h3>
-        <p class="muted small">Now that you have candidates, narrow down by milk preference — then click Get Recommendation again.</p>
-        <div class="pref-chips-grid" style="margin-top:12px">
-          <button class="pref-chip" data-group="milk" data-pref="milk" data-value="whole milk" type="button">🥛 Whole Milk</button>
-          <button class="pref-chip" data-group="milk" data-pref="milk" data-value="oat milk" type="button">🌾 Oat Milk</button>
-          <button class="pref-chip" data-group="milk" data-pref="milk" data-value="almond milk" type="button">🌰 Almond Milk</button>
-          <button class="pref-chip" data-group="milk" data-pref="milk" data-value="soy milk" type="button">🫘 Soy Milk</button>
-          <button class="pref-chip" data-group="milk" data-pref="milk" data-value="coconut milk" type="button">🥥 Coconut Milk</button>
-          <button class="pref-chip" data-group="milk" data-pref="milk" data-value="nonfat" type="button">🏃 Nonfat</button>
-        </div>
-      </div>
+      <!-- placeholder so existing MutationObserver doesn't throw -->
+      <div id="bar-further-options" hidden></div>
     </div>
 
-    <!-- ======================== ORDER BUILDER VIEW ======================== -->
+    <!-- ======================== FINAL ORDER BUILDER VIEW ======================== -->
     <div class="view" id="view-order">
       <div class="view-head">
-        <h2>📝 Order Builder</h2>
-        <p class="muted">Parse raw order text into structured fields (size, temperature, milk, syrups, customisations) and validate before submission.</p>
+        <h2>📝 Final Order Builder</h2>
+        <p class="muted">Focused order validation screen. Use this when the customer already knows their order and you only need to validate missing fields, customizations, and prep notes.</p>
       </div>
       <div class="card">
         <h3>Run Parameters</h3>
@@ -421,9 +704,16 @@
             <span class="field-label">Store <span class="required-mark">*</span></span>
             <select id="ord-store">
               <option value="" disabled selected>Select store…</option>
-              <option value="SD001">SD001 — San Diego Downtown</option>
-              <option value="SD002">SD002 — Mission Valley</option>
-              <option value="SD003">SD003 — La Jolla</option>
+              <option value="SD001">SD001 — Gaslamp Quarter</option>
+              <option value="SD002">SD002 — Pacific Beach</option>
+              <option value="SD003">SD003 — UCSD Campus</option>
+              <option value="SD004">SD004 — Mission Valley</option>
+              <option value="SD005">SD005 — North Park</option>
+              <option value="SD006">SD006 — UTC Westfield</option>
+              <option value="SD007">SD007 — Hillcrest</option>
+              <option value="SD008">SD008 — SD Airport</option>
+              <option value="SD009">SD009 — Del Mar</option>
+              <option value="SD010">SD010 — Chula Vista</option>
             </select>
             <span class="field-error" id="ord-store-err" hidden></span>
           </label>
@@ -467,27 +757,52 @@
           <button class="subtab" data-sub="assumptions">Assumptions</button>
           <button class="subtab" data-sub="warnings">Warnings</button>
           <button class="subtab" data-sub="quality">Quality + Face Validity</button>
+          <button class="subtab" data-sub="audit">Activity Log</button>
         </div>
         <div class="subpanel active" id="sub-tool"></div>
         <div class="subpanel" id="sub-rag"></div>
         <div class="subpanel" id="sub-assumptions"></div>
         <div class="subpanel" id="sub-warnings"></div>
         <div class="subpanel" id="sub-quality"></div>
+        <div class="subpanel" id="sub-audit">
+          <div class="card">
+            <h3>📋 Recent Activity</h3>
+            <p class="muted small">Workflow runs and human-review actions for this session. The full log is in the Audit Log drawer at the bottom of the screen.</p>
+            <ol class="mini-audit" id="evi-audit-list"><li class="muted small">No activity yet.</li></ol>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- ghost elements — app.js references these; keeping hidden so it doesn't throw -->
-    <div id="view-review" hidden>
-      <div id="review-empty" hidden></div>
+    <!-- ======================== REVIEW QUEUE VIEW ======================== -->
+    <div class="view" id="view-review">
+      <div class="view-head">
+        <h2>✅ Review Queue</h2>
+        <p class="muted">Items from the latest workflow run that need human approval before serving. Approve, edit, reject + rerun, or escalate — actions append to the Audit Log.</p>
+      </div>
+      <div class="filter-row">
+        <button class="filter active" data-filter="all" type="button">All</button>
+        <button class="filter" data-filter="pending" type="button">Pending</button>
+        <button class="filter" data-filter="approved" type="button">Approved</button>
+        <button class="filter" data-filter="escalated" type="button">Escalated</button>
+      </div>
+      <div class="empty-state" id="review-empty">
+        <div class="empty-icon">✅</div>
+        <h3>No review items yet</h3>
+        <p>Run a workflow first. Items needing human approval will appear here automatically.</p>
+        <button class="run cta-empty" data-jump="full" type="button">Go to Full Workflow</button>
+      </div>
       <div id="review-populated" hidden><div id="review-list"></div></div>
     </div>
 
-    <!-- ======================== ORDER QUEUE VIEW ======================== -->
+    <!-- ======================== ORDERS VIEW ======================== -->
     <div class="view" id="view-orderqueue">
       <div class="view-head">
-        <h2>🎯 Order Queue</h2>
-        <p class="muted">Drinks approved for preparation. Similar orders are grouped together so the barista can batch efficiently. Click <strong>Done</strong> when an order is complete.</p>
+        <h2>🎯 Orders</h2>
+        <p class="muted">Drinks approved for preparation. Similar orders are grouped so the barista can batch efficiently. Click <strong>Done</strong> to move an order from Orders Queued to Orders Completed.</p>
       </div>
+
+      <h3 class="orders-subhead">📋 Orders Queued</h3>
 
       <div class="queue-summary-bar" id="queue-summary-bar" hidden>
         <div class="queue-total-pill">
@@ -505,6 +820,27 @@
       </div>
 
       <div id="queue-groups"></div>
+
+      <!-- ───────────── Orders Completed (client-side) ───────────── -->
+      <div class="completed-section" id="completed-section">
+        <div class="completed-header">
+          <h3>✅ Orders Completed</h3>
+          <div class="completed-tools">
+            <span class="completed-count-pill" id="completed-count">0 completed</span>
+            <button class="queue-clear-btn" id="completed-clear-btn" type="button" hidden>Clear Completed</button>
+          </div>
+        </div>
+        <p class="muted small">Orders marked <strong>Done</strong> move here for this session (client-side only — no database).</p>
+        <div class="completed-empty muted small" id="completed-empty">No completed orders yet.</div>
+        <div id="completed-list"></div>
+      </div>
+
+      <!-- ───────────── Activity / Audit panel for this surface ───────────── -->
+      <div class="card" id="queue-audit-card" style="margin-top:22px">
+        <h3>📋 Recent Activity</h3>
+        <p class="muted small">Queue, completion, and review actions for this session. Full history is in the Audit Log drawer below.</p>
+        <ol class="mini-audit" id="queue-audit-list"><li class="muted small">No activity yet.</li></ol>
+      </div>
     </div>
 
   </main>
@@ -557,27 +893,29 @@
 (function () {
   "use strict";
 
-  // ─── Global store ────────────────────────────────────────────────────────────
-  function setGlobalStore(storeId, storeLabel) {
-    ["full-store", "mgr-store", "bar-store", "ord-store"].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) el.value = storeId;
+  // ─── Global store — exposed on window so all scripts can call it safely ────────
+  window.setGlobalStore = function (storeId, storeLabel) {
+    if (!storeId) return;
+    // All store selects across every view (bar-store is now a visible select)
+    ["global-store-select", "dash-store", "full-store", "mgr-store", "ord-store", "bar-store"].forEach(function (id) {
+      var node = document.getElementById(id);
+      if (!node) return;
+      node.value = storeId;
+      node.classList.add("store-synced");
+      setTimeout(function () { node.classList.remove("store-synced"); }, 600);
+      node.dispatchEvent(new Event("change", { bubbles: true }));
     });
-    var label = document.getElementById("global-store-label");
-    if (label) {
-      label.textContent = storeLabel;
-      label.className = "store-pill active";
-    }
+  };
+
+  // ─── Topbar store dropdown ────────────────────────────────────────────────────
+  var globalStoreSel = document.getElementById("global-store-select");
+  if (globalStoreSel) {
+    globalStoreSel.addEventListener("change", function () {
+      window.setGlobalStore(globalStoreSel.value);
+    });
   }
 
-  // ─── Startup store selection ─────────────────────────────────────────────────
-  var startupModal = document.getElementById("startup-modal");
-  document.querySelectorAll(".store-select-btn").forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      setGlobalStore(btn.dataset.store, btn.textContent.trim());
-      startupModal.classList.add("hidden");
-    });
-  });
+  // startup modal removed — store selection is now via the topbar dropdown
 
   // ─── Manager password gate ───────────────────────────────────────────────────
   var mgrAuthed = false;
@@ -622,16 +960,73 @@
     pwError.hidden = true;
   });
 
+  // ─── Audit Log sidebar item ──────────────────────────────────────────────────
+  // It is an action (open the always-present drawer), not a view. Capture phase +
+  // stopImmediatePropagation prevents app.js's switchTab from blanking the screen.
+  var auditNavBtn = document.getElementById("nav-audit-log");
+  if (auditNavBtn) {
+    auditNavBtn.addEventListener("click", function (e) {
+      e.stopImmediatePropagation();
+      var drawer = document.getElementById("audit-drawer");
+      if (drawer) drawer.setAttribute("aria-expanded", "true");
+      var body = document.getElementById("audit-body");
+      if (body) body.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      if (window.refreshAudit) window.refreshAudit();
+    }, true);
+  }
+
   // ─── Preference chips ────────────────────────────────────────────────────────
-  var SINGLE_SELECT = new Set(["temp", "caffeine", "coffee", "milk"]);
+  var SINGLE_SELECT = new Set(["temp", "caffeine", "coffee", "milk", "size"]);
   var PREF_INPUT = {
     temp:     "bar-pref-temp",
+    size:     "bar-pref-size",
     sweet:    "bar-pref-sweet",
     milk:     "bar-pref-milk",
     caffeine: "bar-pref-caffeine",
     coffee:   "bar-pref-coffee",
     lowcal:   "bar-pref-lowcal",
   };
+
+  // ─── Size / temperature compatibility ───────────────────────────────────────
+  function checkSizeCompat() {
+    var temp = (document.getElementById("bar-pref-temp") || {}).value || "";
+    var size = (document.getElementById("bar-pref-size") || {}).value || "";
+    var warn = document.getElementById("bar-size-compat-warn");
+    if (!warn) return;
+
+    // Size-to-temp rules
+    var msg = "";
+    if (size === "Trenta" && temp === "hot") {
+      msg = "⚠ Trenta is cold drinks only (30 oz cold). Switch to a hot size or change to Iced.";
+    } else if (size === "Short" && temp === "iced") {
+      msg = "⚠ Short (8 oz) is for hot drinks. Switch to Tall or change to Hot.";
+    }
+    warn.textContent = msg;
+    warn.hidden = !msg;
+
+    // Visual dim on incompatible chips (not fully disabled — barista still has final say)
+    document.querySelectorAll(".size-chip").forEach(function (c) {
+      var isHotOnly  = c.hasAttribute("data-hot-only");
+      var isColdOnly = c.hasAttribute("data-cold-only");
+      var compat = true;
+      if (temp === "hot"  && isColdOnly) compat = false;
+      if (temp === "iced" && isHotOnly)  compat = false;
+      c.classList.toggle("size-compat-off", !compat);
+      c.title = (!compat
+        ? (isColdOnly ? "Cold drinks only" : "Hot drinks only") + " · " + c.title
+        : c.title.replace(/^(Cold drinks only|Hot drinks only) · /, ""));
+    });
+  }
+
+  // ─── Size-guide toggle ────────────────────────────────────────────────────────
+  var sizeGuideToggle = document.getElementById("size-guide-toggle");
+  var sizeGuideEl = document.getElementById("bar-size-guide");
+  if (sizeGuideToggle && sizeGuideEl) {
+    sizeGuideToggle.addEventListener("click", function () {
+      sizeGuideEl.hidden = !sizeGuideEl.hidden;
+      sizeGuideToggle.textContent = sizeGuideEl.hidden ? "ⓘ" : "✕";
+    });
+  }
 
   function setHidden(id, value) {
     var el = document.getElementById(id);
@@ -658,8 +1053,16 @@
         return;
       }
 
-      // Food / Gluten-Free: multi-select, no hidden input (appended to request on submit)
-      if (pref === "food" || pref === "glutenfree") {
+      // Food / Bakery: multi-select; also sets a structured food_only preference
+      // so the backend restricts results to bakery/food items (not just drinks).
+      if (pref === "food") {
+        var foodActive = btn.classList.toggle("active");
+        setHidden("bar-pref-food", foodActive ? "true" : "");
+        return;
+      }
+
+      // Gluten-Free: multi-select, no hidden input (appended to request on submit)
+      if (pref === "glutenfree") {
         btn.classList.toggle("active");
         return;
       }
@@ -676,6 +1079,10 @@
           btn.classList.add("active");
           setHidden(inputId, value);
         }
+        // After temp or size changes, re-run size compatibility check
+        if (group === "temp" || group === "size") {
+          setTimeout(checkSizeCompat, 0);
+        }
         return;
       }
 
@@ -686,12 +1093,77 @@
     });
   });
 
-  // ─── On barista run: append allergy + food/gluten flags to request ───────────
+  // ─── Refinement chips (espresso / syrups / sauces / cold foam) ───────────────
+  // These are prototype customization options. They do not map to the backend's
+  // structured preference filters; instead their notes are appended to the
+  // customer request so the live recommendation engine can use any flavor /
+  // strength / drink-name signals it recognises. Selected notes also ride along
+  // as customizations when a drink is added to the Order Queue.
+  document.querySelectorAll(".refine-chip").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      if (btn.hasAttribute("data-refine-single")) {
+        var grp = btn.dataset.refineGroup;
+        var was = btn.classList.contains("active");
+        document.querySelectorAll('.refine-chip[data-refine-group="' + grp + '"][data-refine-single]')
+          .forEach(function (b) { b.classList.remove("active"); });
+        if (!was) btn.classList.add("active");
+      } else {
+        btn.classList.toggle("active");
+      }
+    });
+  });
+
+  // Collect active refinement notes (used for request text + queue customizations)
+  function collectRefinements() {
+    return Array.prototype.map.call(
+      document.querySelectorAll(".refine-chip.active"),
+      function (b) { return b.dataset.note; }
+    ).filter(Boolean);
+  }
+  window.__collectRefinements = collectRefinements;
+
+  // ─── Seasonal gating ─────────────────────────────────────────────────────────
+  // Seasonal syrup/foam options stay hidden until the "Seasonal" drink-type chip
+  // is selected. Deselecting Seasonal hides them again and clears any selections.
+  function syncSeasonalVisibility() {
+    var seasonalActive = !!document.querySelector('.pref-chip[data-value="seasonal"].active');
+    ["bar-seasonal-syrups", "bar-seasonal-foams"].forEach(function (id) {
+      var sec = document.getElementById(id);
+      if (!sec) return;
+      sec.hidden = !seasonalActive;
+      if (!seasonalActive) {
+        sec.querySelectorAll(".refine-chip.active").forEach(function (c) { c.classList.remove("active"); });
+      }
+    });
+  }
+  document.querySelectorAll('.pref-chip[data-group="coffee"]').forEach(function (btn) {
+    btn.addEventListener("click", function () { setTimeout(syncSeasonalVisibility, 0); });
+  });
+
+  // ─── Track the user's typed request so re-runs never accumulate appended notes ─
+  var barTypedRequest = "";
+  var barReqEl = document.getElementById("bar-request");
+  if (barReqEl) {
+    barReqEl.addEventListener("input", function () { barTypedRequest = this.value; });
+  }
+
+  function barReqErr(msg) {
+    var err = document.getElementById("bar-request-err");
+    if (err) { err.textContent = msg; err.hidden = false; }
+    if (barReqEl) barReqEl.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  function clearBarReqErr() {
+    var err = document.getElementById("bar-request-err");
+    if (err) err.hidden = true;
+  }
+
+  // ─── On barista run: validate at least one input source, then build request ──
   var runBaristaBtn = document.getElementById("run-barista");
   if (runBaristaBtn) {
-    runBaristaBtn.addEventListener("click", function () {
+    runBaristaBtn.addEventListener("click", function (e) {
       var req = document.getElementById("bar-request");
       if (!req) return;
+
       var extras = [];
 
       // Allergy text
@@ -699,17 +1171,33 @@
       if (allergyText && allergyText.trim()) extras.push("Allergy: " + allergyText.trim());
 
       // Food / Bakery chip
-      var foodBtn = document.querySelector('.pref-chip[data-pref="food"].active');
-      if (foodBtn) extras.push("interested in food or bakery items");
-
-      // Gluten-Free chip
-      var gfBtn = document.querySelector('.pref-chip[data-pref="glutenfree"].active');
-      if (gfBtn) extras.push("needs gluten-free option");
-
-      if (extras.length) {
-        var base = req.value.trim();
-        req.value = base + (base ? " — " : "") + extras.join(", ");
+      if (document.querySelector('.pref-chip[data-pref="food"].active')) {
+        extras.push("interested in food or bakery items");
       }
+      // Gluten-Free chip
+      if (document.querySelector('.pref-chip[data-pref="glutenfree"].active')) {
+        extras.push("needs gluten-free option");
+      }
+      // Refinement chips (espresso / syrup / sauce / foam)
+      extras = extras.concat(collectRefinements());
+
+      // Selected size — append as a customization note so the engine sees it
+      var selSize = (document.getElementById("bar-pref-size") || {}).value || "";
+      if (selSize) extras.push(selSize.toLowerCase() + " size");
+
+      // At least one input source: typed request, an active preference chip,
+      // an active refinement chip, or allergy text.
+      var typed = barTypedRequest.trim();
+      var hasSelections = document.querySelectorAll(".pref-chip.active, .refine-chip.active").length > 0;
+      if (!typed && !hasSelections && !(allergyText && allergyText.trim())) {
+        e.stopImmediatePropagation();
+        barReqErr("Please enter a customer request, select preferences, or pick a refinement option.");
+        return;
+      }
+      clearBarReqErr();
+
+      // Rebuild from the user's typed base each run (prevents note accumulation)
+      req.value = (typed + (extras.length ? (typed ? " — " : "") + extras.join(", ") : "")).trim();
     }, true); // capture: runs before app.js reads the field
   }
 
@@ -728,8 +1216,31 @@
   // ORDER QUEUE
   // =========================================================================
 
+  // Client-side state
+  var queueCache = [];
+  var completedOrders = [];
+
+  // Format a server numeric id as Q-001, Q-002 …
+  function qLabel(id) {
+    return "Q-" + String(id).padStart(3, "0");
+  }
+
+  // Build the display title: "Order Q-001 — [Size] [Temp] [Item]"
+  // Missing critical fields → "Order Q-001 — Needs Clarification"
+  function qTitle(order) {
+    var label = qLabel(order.q_label || order.id);
+    var so = order.structured_order || {};
+    var size = so.size || order.size || "";
+    var temp = so.temperature || order.temperature || "";
+    var item = so.canonical_name || so.item_name || order.item || "";
+    if (!item) return label + " — Needs Clarification";
+    var parts = [size, temp, item].filter(Boolean);
+    return label + " — " + parts.join(" ");
+  }
+
   // ─── Render ──────────────────────────────────────────────────────────────
   function renderQueue(queue) {
+    queueCache = (queue || []).slice();
     var groupsEl  = document.getElementById("queue-groups");
     var emptyEl   = document.getElementById("queue-empty");
     var summaryEl = document.getElementById("queue-summary-bar");
@@ -790,11 +1301,26 @@
           ? new Date(order.queued_at).toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"})
           : "";
 
+        // Status chips
+        var statusChips = "";
+        var so = order.structured_order || {};
+        if ((so.missing_fields || []).length) {
+          statusChips += '<span class="queue-meta-chip status-warn">⚠ Missing: ' + so.missing_fields.join(", ") + '</span>';
+        }
+        if (order.fv_status && order.fv_status !== "not_applicable") {
+          var fvCls = order.fv_status === "plausible" ? "status-ok" : order.fv_status === "weak" ? "status-err" : "status-warn";
+          statusChips += '<span class="queue-meta-chip ' + fvCls + '">' + order.fv_status + '</span>';
+        }
+        if (order.source) {
+          statusChips += '<span class="queue-meta-chip">from: ' + order.source + '</span>';
+        }
+
         item.innerHTML =
-          '<span class="queue-order-num">#' + order.id + '</span>' +
+          '<span class="queue-order-num">' + qLabel(order.id) + '</span>' +
           '<div class="queue-item-body">' +
-            '<span class="queue-item-name">' + order.item + '</span>' +
+            '<span class="queue-item-name">' + qTitle(order) + '</span>' +
             (metaHTML ? '<div class="queue-item-meta">' + metaHTML + '</div>' : '') +
+            (statusChips ? '<div class="queue-item-meta">' + statusChips + '</div>' : '') +
           '</div>' +
           '<span class="queue-item-time">' + time + '</span>' +
           '<button class="queue-done-btn" type="button" data-id="' + order.id + '">✓ Done</button>';
@@ -844,14 +1370,91 @@
   }
 
   async function doneOrder(id) {
-    var res = await fetch("/api/queue/" + id + "/done", { method: "DELETE" });
-    if (res.ok) {
-      var data = await res.json();
-      flashBanner("Done: " + (data.removed && data.removed.item ? data.removed.item : "#" + id), "ok");
-      refreshQueue();
-      refreshAudit();
+    // Capture the full order from the client cache BEFORE removing it server-side,
+    // so the Orders Completed card can show its details.
+    var order = queueCache.find(function (o) { return o.id === id; }) || { id: id, item: "#" + id };
+    try {
+      var res = await fetch("/api/queue/" + id + "/done", { method: "DELETE" });
+      if (!res.ok) {
+        if (window.flashBanner) window.flashBanner("Could not complete #" + id, "err");
+        return;
+      }
+    } catch (e) {
+      if (window.flashBanner) window.flashBanner("Could not complete #" + id, "err");
+      return;
     }
+    // Move to completed (client-side, newest first)
+    var completed = {};
+    Object.keys(order).forEach(function (k) { completed[k] = order[k]; });
+    completed.completed_at = new Date().toISOString();
+    completed.action_source = "Done";
+    completedOrders.unshift(completed);
+
+    var qlbl = qLabel(id);
+    if (window.flashBanner) window.flashBanner("Completed: " + qlbl + (order.item ? " — " + order.item : ""), "ok");
+    renderQueue(queueCache.filter(function (o) { return o.id !== id; })); // optimistic
+    renderCompleted();
+    refreshQueue();   // reconcile with server
+    if (window.refreshAudit) window.refreshAudit();
   }
+
+  // ─── Orders Completed render ───────────────────────────────────────────────
+  function renderCompleted() {
+    var listEl  = document.getElementById("completed-list");
+    var emptyEl = document.getElementById("completed-empty");
+    var countEl = document.getElementById("completed-count");
+    var clearEl = document.getElementById("completed-clear-btn");
+    if (!listEl) return;
+
+    if (countEl) countEl.textContent = completedOrders.length +
+      (completedOrders.length === 1 ? " completed" : " completed");
+    if (clearEl) clearEl.hidden = completedOrders.length === 0;
+
+    if (!completedOrders.length) {
+      if (emptyEl) emptyEl.hidden = false;
+      listEl.innerHTML = "";
+      return;
+    }
+    if (emptyEl) emptyEl.hidden = true;
+
+    listEl.innerHTML = "";
+    completedOrders.forEach(function (o) {
+      var meta = [];
+      if (o.size)         meta.push(o.size);
+      if (o.temperature)  meta.push(o.temperature);
+      if (o.milk_type)    meta.push(o.milk_type);
+      if (o.syrups && o.syrups.length)               meta.push(o.syrups.join(", "));
+      if (o.customizations && o.customizations.length) meta.push(o.customizations.join(", "));
+      if (o.notes)        meta.push(o.notes);
+      var metaHTML = meta.map(function (m) { return '<span class="queue-meta-chip">' + m + '</span>'; }).join("");
+
+      var ctime = o.completed_at
+        ? new Date(o.completed_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        : "";
+      var origin = o.workflow_type ? o.workflow_type.replace(/_/g, " ") : (o.category || "order");
+
+      var card = document.createElement("div");
+      card.className = "completed-item";
+      var displayTitle = qTitle(o);
+      var queuedTime = o.queued_at
+        ? new Date(o.queued_at).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})
+        : "";
+      card.innerHTML =
+        '<span class="completed-check">✓</span>' +
+        '<div class="completed-body">' +
+          '<span class="completed-name">' + displayTitle + '</span>' +
+          (metaHTML ? '<div class="queue-item-meta">' + metaHTML + '</div>' : '') +
+          '<div class="completed-sub">' +
+            '<span class="completed-source">' + (o.action_source || "Done") + '</span>' +
+            ' · from ' + origin +
+            (queuedTime ? ' · queued ' + queuedTime : '') +
+          '</div>' +
+        '</div>' +
+        '<span class="completed-time">' + ctime + '</span>';
+      listEl.appendChild(card);
+    });
+  }
+  window.__renderCompleted = renderCompleted;
 
   // ─── 1. Inject "Add to Queue" buttons next to each recommendation candidate ──
   // The barista picks which specific drink to send to the queue.
@@ -893,10 +1496,14 @@
           var candidate = cands.find(function (c) { return c.item === itemName; })
                           || cands[idx]
                           || { item: itemName };
+          var milkPref = (document.getElementById("bar-pref-milk") || {}).value || "";
+          var refinements = (window.__collectRefinements ? window.__collectRefinements() : []);
           addToQueue({
             item:          candidate.item || itemName,
             category:      candidate.category || "",
             subcategory:   candidate.subcategory || "",
+            milk_type:     candidate.milk_type || milkPref || "",
+            customizations: refinements,
             workflow_type: run.workflow_type || "barista_recommendation",
           });
         });
@@ -915,6 +1522,91 @@
       setTimeout(function () { injectCandidateQueueButtons(el); }, 50);
     }).observe(el, { childList: true });
   });
+
+  // ─── Inject "Add to Orders" button after Build Final Order runs ──────────────
+  // Parses the structured_order from the last order_builder run and adds an
+  // action button. User must click it — orders are never auto-added.
+  function injectAddToOrdersButton(outputEl) {
+    // Guard: only inject once per render
+    if (outputEl.dataset.addOrdersInjected === "1") return;
+    if (!outputEl.children.length) return;
+
+    var lastRun = window.__lastOrderBuild;
+    if (!lastRun || lastRun.workflow_type !== "order_builder") return;
+
+    outputEl.dataset.addOrdersInjected = "1";
+
+    var fo = lastRun.final_output || {};
+    var so = fo.structured_order || {};
+    var itemName = so.canonical_name || so.item_name || fo.raw_order || "(order)";
+    var hasMissing = (fo.missing_fields || []).length > 0;
+
+    // Build the button area
+    var wrap = document.createElement("div");
+    wrap.className = "add-orders-wrap";
+
+    if (hasMissing) {
+      var warn = document.createElement("div");
+      warn.className = "status-banner warn";
+      warn.innerHTML = '<strong>⚠ Missing fields: </strong>' + fo.missing_fields.join(", ") +
+        (fo.follow_up_question ? ' — ' + fo.follow_up_question : '') +
+        '. You can still add to Orders Queued — the order will be flagged.';
+      wrap.appendChild(warn);
+    }
+
+    var btn = document.createElement("button");
+    btn.className = "run add-orders-btn";
+    btn.type = "button";
+    btn.textContent = "➕ Add to Orders";
+
+    var submitting = false;
+    btn.addEventListener("click", function () {
+      if (submitting || btn.disabled) return;
+      submitting = true; btn.disabled = true;
+
+      // Get selected size from Barista View
+      var sizePref = (document.getElementById("bar-pref-size") || {}).value || "";
+      var milkPref = (document.getElementById("bar-pref-milk") || {}).value || "";
+      var refinements = (window.__collectRefinements ? window.__collectRefinements() : []);
+
+      // Build queue payload from structured order
+      var payload = {
+        item:           so.canonical_name || so.item_name || fo.raw_order || "(order)",
+        category:       so.category || "",
+        size:           so.size || sizePref || "",
+        temperature:    so.temperature || "",
+        milk_type:      so.milk_type || milkPref || "",
+        syrups:         so.syrups || [],
+        customizations: (so.customizations || []).concat(refinements),
+        notes:          (fo.prep_notes || []).join("; "),
+        workflow_type:  "order_builder",
+        structured_order: so,
+        fv_status:      (lastRun.face_validity || {}).status || "",
+        source:         "Barista View",
+      };
+      if (hasMissing) payload.notes = ("⚠ " + (fo.missing_fields || []).join(", ") + (payload.notes ? " · " + payload.notes : ""));
+
+      addToQueue(payload);
+      btn.textContent = "✓ Added to Orders";
+      btn.classList.add("queued");
+
+      // Switch to Orders tab after a brief pause
+      setTimeout(function () {
+        if (window.switchTab) window.switchTab("orderqueue");
+      }, 800);
+    });
+    wrap.appendChild(btn);
+    outputEl.appendChild(wrap);
+  }
+
+  // Watch barista-order-output for order builder results
+  (function () {
+    var el = document.getElementById("barista-order-output");
+    if (!el) return;
+    new MutationObserver(function () {
+      setTimeout(function () { injectAddToOrdersButton(el); }, 60);
+    }).observe(el, { childList: true });
+  }());
 
   // ─── Manager action sections — injected after manager readiness runs ─────────
   // Shows each key readiness area as an actionable card so the manager can
@@ -1122,12 +1814,22 @@
     queueClearBtn.addEventListener("click", async function () {
       await fetch("/api/queue", { method: "DELETE" });
       refreshQueue();
-      refreshAudit();
+      if (window.refreshAudit) window.refreshAudit();
+    });
+  }
+
+  // ─── Clear completed button (client-side state only) ────────────────────────
+  var completedClearBtn = document.getElementById("completed-clear-btn");
+  if (completedClearBtn) {
+    completedClearBtn.addEventListener("click", function () {
+      completedOrders = [];
+      renderCompleted();
     });
   }
 
   // Initial load
   refreshQueue();
+  renderCompleted();
 
 })();
 </script>

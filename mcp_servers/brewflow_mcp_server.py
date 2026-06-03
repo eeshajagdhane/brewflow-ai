@@ -177,10 +177,18 @@ def _normalize_preferences(prefs: dict) -> dict:
         if v in _DAIRY_FREE_TERMS:
             prefs["dairy_free"] = True
 
-    if "coffee_preference" in prefs and not prefs.get("non_coffee"):
+    if "coffee_preference" in prefs:
         v = str(prefs["coffee_preference"]).lower().strip()
-        if v in _NON_COFFEE_TERMS:
+        # Non-coffee mapping
+        if not prefs.get("non_coffee") and v in _NON_COFFEE_TERMS:
             prefs["non_coffee"] = True
+        # Coffee-only mapping — restrict to coffee/espresso categories
+        if not prefs.get("coffee_only") and v in {"coffee", "coffee-only", "espresso"}:
+            prefs["coffee_only"] = True
+
+    # "seasonal" coffee preference → seasonal menu filter
+    if not prefs.get("seasonal") and str(prefs.get("coffee_preference", "")).lower().strip() == "seasonal":
+        prefs["seasonal"] = True
 
     if "sweetness" in prefs and not prefs.get("flavor"):
         v = str(prefs["sweetness"]).lower().strip()
@@ -208,7 +216,10 @@ def search_menu_by_preferences(
       low_calorie: bool  (prefer items <= 150 kcal per size)
       flavor: str  (e.g. "sweet", "fruity", "chocolate", "caramel", "vanilla")
       keywords: list[str]
-      food: bool  (True = include food, default False)
+      food: bool  (True = include food alongside drinks, default False)
+      food_only: bool  (True = restrict to bakery/food categories, no beverages)
+      coffee_only: bool  (True = restrict to Hot Coffee / Cold Coffee categories)
+      seasonal: bool  (True = restrict to Seasonal - * menu categories)
 
     If store_id + date are provided, down-ranks items with low-stock ingredients.
     Uses order_history popularity as a tiebreaker.
@@ -230,13 +241,25 @@ def search_menu_by_preferences(
     gluten_free = bool(preferences.get("gluten_free", False))
     wants_caffeine = preferences.get("caffeine", None)  # None = no preference; True/False = explicit
     non_coffee = bool(preferences.get("non_coffee", False))
+    coffee_only = bool(preferences.get("coffee_only", False))
     low_calorie = bool(preferences.get("low_calorie", False))
     flavor_pref = str(preferences.get("flavor", "")).lower().strip()
     keywords = [k.lower() for k in preferences.get("keywords", [])]
     include_food = bool(preferences.get("food", False))
+    # food_only: customer explicitly wants bakery/food items, not drinks.
+    food_only = bool(preferences.get("food_only", False))
+    if food_only:
+        include_food = True  # never skip food categories when food is the goal
+    seasonal_pref = bool(preferences.get("seasonal", False))
 
     # Food categories to exclude unless explicitly requested
     food_categories = {"Bakery", "Breakfast", "Lunch", "Snacks & Sweets"}
+    seasonal_categories = {
+        "Seasonal - Holiday",
+        "Seasonal - Spring",
+        "Seasonal - Fall",
+        "Seasonal - Winter/Spring",
+    }
     drink_categories = {
         "Hot Coffee",
         "Cold Coffee",
@@ -270,28 +293,64 @@ def search_menu_by_preferences(
         reason_codes: list[str] = []
         disqualified = False
 
-        # Temperature filter
-        if temp_pref in ("hot",):
-            if category not in ("Hot Coffee", "Hot Tea", "Hot Drinks"):
-                disqualified = True
-        elif temp_pref in ("cold", "iced"):
-            if category not in ("Cold Coffee", "Cold Drinks", "Iced Tea", "Frappuccino", "Bottled Beverages"):
-                disqualified = True
+        is_seasonal = category in seasonal_categories
+        is_food = category in food_categories
+        is_coffee_cat = category in ("Hot Coffee", "Cold Coffee")
 
-        # Non-coffee filter
+        # Food-only hard filter — when the customer wants bakery/food, restrict the
+        # pool to the food categories only (no beverages).
+        if food_only and not is_food:
+            disqualified = True
+
+        # Coffee-only hard filter — restrict to coffee/espresso categories.
+        # Frappuccino is excluded (mixed coffee/non-coffee) to keep results clean;
+        # temperature filter will narrow further if iced/hot is also set.
+        if coffee_only and not is_coffee_cat:
+            disqualified = True
+
+        # Seasonal hard filter — when the customer wants seasonal items, restrict
+        # the pool to the Seasonal - * categories only.
+        if seasonal_pref and not is_seasonal:
+            disqualified = True
+
+        # Temperature filter (skipped for food — bakery items have no temperature)
+        if not disqualified and not food_only:
+            if seasonal_pref:
+                # Seasonal items are not categorised by temperature, so infer it
+                # from the item name (e.g. "Iced Pumpkin Spice Latte", Frappuccino).
+                name_is_cold = any(t in item_lower for t in ("iced", "cold", "frappuccino"))
+                if temp_pref in ("cold", "iced") and not name_is_cold:
+                    disqualified = True
+                elif temp_pref in ("hot",) and name_is_cold:
+                    disqualified = True
+            elif temp_pref in ("hot",):
+                if category not in ("Hot Coffee", "Hot Tea", "Hot Drinks"):
+                    disqualified = True
+            elif temp_pref in ("cold", "iced"):
+                if category not in ("Cold Coffee", "Cold Drinks", "Iced Tea", "Frappuccino", "Bottled Beverages"):
+                    disqualified = True
+
+        # Non-coffee filter — disqualify coffee/espresso items two ways:
+        # 1. Category: "Cold Coffee" and "Hot Coffee" are entirely coffee-based.
+        # 2. Name: catch coffee terms in other categories (e.g. Frappuccino, Seasonal).
         if non_coffee:
-            coffee_terms = (
-                "coffee",
-                "espresso",
-                "latte",
-                "americano",
-                "mocha",
-                "macchiato",
-                "cappuccino",
-                "flat white",
-            )
-            if any(t in item_lower for t in coffee_terms):
+            if is_coffee_cat:
                 disqualified = True
+            else:
+                coffee_terms = (
+                    "coffee",
+                    "espresso",
+                    "latte",
+                    "americano",
+                    "mocha",
+                    "macchiato",
+                    "cappuccino",
+                    "flat white",
+                    "cold brew",
+                    "cortado",
+                )
+                if any(t in item_lower for t in coffee_terms):
+                    disqualified = True
 
         # Vegan hard filter
         if vegan and str(row.get("Vegan", "No")) != "Yes":
@@ -313,6 +372,16 @@ def search_menu_by_preferences(
             continue
 
         # Positive scoring
+        # Food match — give food items a base so they rank like drinks do
+        if food_only and is_food:
+            score += 1.0
+            reason_codes.append("food_match")
+
+        # Seasonal match
+        if seasonal_pref and is_seasonal:
+            score += 1.0
+            reason_codes.append("seasonal")
+
         # Caffeine preference
         try:
             caffeine_mg = float(row.get("Caffeine_mg", 0) or 0)

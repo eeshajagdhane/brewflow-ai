@@ -91,10 +91,62 @@ def test_search_menu_no_coffee():
     r = search_menu_by_preferences({"non_coffee": True, "temperature": "hot"})
     assert r["status"] in ("success", "warning")
     candidates = r["data"]["candidates"]
-    coffee_terms = ("coffee", "espresso", "latte", "americano", "mocha", "macchiato", "cappuccino")
+    coffee_terms = ("coffee", "espresso", "latte", "americano", "mocha", "macchiato", "cappuccino", "cold brew")
+    coffee_categories = {"Hot Coffee", "Cold Coffee"}
     for c in candidates:
+        assert c["category"] not in coffee_categories, \
+            f"Coffee-category item returned for non-coffee request: {c['item']} [{c['category']}]"
         assert not any(t in c["item"].lower() for t in coffee_terms), \
             f"Coffee item returned for non-coffee request: {c['item']}"
+
+
+def test_search_menu_no_coffee_iced_excludes_cold_brew():
+    """Non-coffee + iced must not return Cold Coffee category items (e.g. Nitro Cold Brew)."""
+    r = search_menu_by_preferences({"non_coffee": True, "temperature": "iced"})
+    assert r["status"] in ("success", "warning")
+    candidates = r["data"]["candidates"]
+    for c in candidates:
+        assert c["category"] != "Cold Coffee", \
+            f"Cold Coffee item returned for non-coffee+iced: {c['item']}"
+        assert "cold brew" not in c["item"].lower(), \
+            f"Cold brew item returned for non-coffee request: {c['item']}"
+
+
+def test_search_menu_coffee_only_returns_coffee_categories():
+    """coffee_only=True must restrict results to Hot Coffee / Cold Coffee."""
+    r = search_menu_by_preferences({"coffee_only": True})
+    assert r["status"] in ("success", "warning")
+    candidates = r["data"]["candidates"]
+    assert len(candidates) > 0, "coffee_only returned no candidates"
+    coffee_categories = {"Hot Coffee", "Cold Coffee"}
+    for c in candidates:
+        assert c["category"] in coffee_categories, \
+            f"Non-coffee item returned for coffee_only: {c['item']} [{c['category']}]"
+
+
+def test_search_menu_coffee_pref_via_normalize():
+    """coffee_preference='coffee' must normalize to coffee_only and return only coffee items."""
+    from mcp_servers.brewflow_mcp_server import _normalize_preferences
+    prefs = _normalize_preferences({"coffee_preference": "coffee"})
+    assert prefs.get("coffee_only") is True, "coffee_preference='coffee' must set coffee_only=True"
+    r = search_menu_by_preferences(prefs)
+    candidates = r["data"]["candidates"]
+    coffee_categories = {"Hot Coffee", "Cold Coffee"}
+    for c in candidates:
+        assert c["category"] in coffee_categories, \
+            f"Non-coffee item for coffee preference: {c['item']} [{c['category']}]"
+
+
+def test_search_menu_food_only_still_works():
+    """Existing food_only behavior must be preserved after coffee changes."""
+    r = search_menu_by_preferences({"food_only": True})
+    assert r["status"] in ("success", "warning")
+    candidates = r["data"]["candidates"]
+    assert len(candidates) > 0
+    food_categories = {"Bakery", "Breakfast", "Lunch", "Snacks & Sweets"}
+    for c in candidates:
+        assert c["category"] in food_categories, \
+            f"Non-food item returned for food_only: {c['item']} [{c['category']}]"
 
 
 def test_search_menu_low_calorie():
