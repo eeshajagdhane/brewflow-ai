@@ -1,186 +1,287 @@
-# BrewFlow AI — Starbucks Branch Daily Operations and Order Fulfillment
+# BrewFlow AI — Milestone 04
 
-> **Milestone 04 — Group 8 | MGTA 495 GenAI for Business**
+**Project:** BrewFlow AI: Starbucks Branch Daily Operations and Order Fulfillment
+**Course:** MGTA 495 GenAI for Business, Spring 2026
+**Team:** Group 8
 
-BrewFlow AI is a live role-based AI operations console for a simulated Starbucks branch.
-All outputs are generated from real CSV data and deterministic logic — **no canned demo responses**.
-
-> ⚠ **Simulated branch prototype.** BrewFlow AI uses the public Starbucks
-> menu plus **simulated** operational CSVs (inventory, staffing, sales
-> forecast, order history, promotions). **No proprietary Starbucks data
-> is used.** All quantitative estimates in this repo are reasoned ranges,
-> not company facts.
+> **Simulated branch prototype.**
+> This project uses the public Starbucks menu plus *simulated* operational
+> CSVs (inventory, staffing, sales forecast, order history, promotions).
+> No proprietary Starbucks data is used anywhere in this repo.
 
 ---
 
-## Milestone 04 Final Deliverables
+## What BrewFlow AI does
 
-| # | Deliverable | File |
-|---|---|---|
-| 1 | Final process redesign + workflow diagram | [`ai_process_design.md`](ai_process_design.md) / [`ai_process_design.pdf`](ai_process_design.pdf) |
-| 2 | Human review and control plan (7 workflow steps, explicit approval points) | [`human_review_plan.md`](human_review_plan.md) |
-| 3 | Evidence and source use | [`evidence_and_sources.md`](evidence_and_sources.md) |
-| 4 | Time, cost, and quality reasoning | [`estimates.md`](estimates.md) |
-| 5 | Predicted failure cases (8 cases, test-mapped) | [`failure_cases.md`](failure_cases.md) |
-| 6 | Test report + before/after fix | [`test_report.md`](test_report.md) |
-| 7 | Face-validity layer | [`face_validity.md`](face_validity.md) |
-| 8 | Final presentation outline | [`presentation_slides/final_presentation_outline.md`](presentation_slides/final_presentation_outline.md) |
-| 9 | 10-minute demo script | [`presentation_slides/demo_script.md`](presentation_slides/demo_script.md) |
+BrewFlow AI is an AI-supported operations console for a simulated Starbucks
+branch. It chains **deterministic automations**, **MCP-style tools**, **RAG
+retrieval**, and **AI skills** into one orchestrated workflow that a manager
+or barista runs before and during a shift:
 
-### What was redesigned
+1. **Manager readiness** — aggregates inventory status, staffing gaps, rush
+   demand, and active promotions into a single pre-shift briefing card.
+2. **Barista recommendation** — scores the full menu against a customer's
+   preferences, cross-checks live inventory, retrieves relevant policy and
+   training documents, and surfaces ranked candidates with reason codes.
+3. **Order building and validation** — parses a natural-language order into
+   structured fields (size, temperature, milk, syrups, customizations),
+   catches missing fields before submission, flags allergy or medical
+   language, and generates a customer confirmation with barista prep notes.
 
-BrewFlow AI redesigns the **daily operations + order fulfilment workflow**
-of a single coffee-shop branch. The redesigned chain runs:
+Every workflow output ships with a structured **evidence package** (tool
+outputs, retrieved documents, warnings, assumptions, audit log) and a
+**face-validity verdict** so the human reviewer can inspect what the AI used
+before approving.
 
-> Manager pre-rush readiness → barista drink recommendation → order
-> building and validation → order confirmation → human review → audit.
-
-### What BrewFlow AI does
-
-- Aggregates inventory, staffing, demand forecast, and active promotions
-  into a single pre-shift readiness briefing for the manager.
-- Parses natural-language customer requests into preferences and ranks
-  menu candidates with inventory-aware scoring and explicit reason codes.
-- Parses raw order text into structured fields (size / temperature / milk
-  / syrups / customisations), catching missing fields before submission.
-- Routes allergy and medical-sensitive language automatically to
-  `escalate`, never silently approving customer-facing recommendations.
-- Produces an `evidence_package` per run (tool outputs, RAG snippets,
-  assumptions, warnings) plus a deterministic `face_validity` verdict.
-- Logs every workflow step and every human review action to an audit log.
-
-### What humans still control
-
-- Final approval of any customer-facing recommendation or order.
-- Allergen verification (always escalated, never auto-approved).
-- Order-text follow-ups when required fields are missing.
-- Manager adjustments to staffing or inventory after reviewing the briefing.
-- Drink preparation itself — drinks are still prepared individually for
-  quality consistency per the retrieved RAG SOP.
-
-### What evidence users can inspect
-
-For every workflow run, the Evidence Center surfaces:
-
-1. **Tool / Data** — every MCP tool / automation call with status
-2. **RAG** — retrieved knowledge-base documents with filename, score,
-   matched terms, and snippet
-3. **Assumptions** — defaults the workflow had to apply
-4. **Warnings** — any signal that something is off (stale snapshot,
-   dairy-free heuristic, rush risk, allergy language)
-5. **Quality + Face Validity** — quality score with label + the face
-   validity verdict (status, confidence, anchors, supporting reasons,
-   concerns, recommended action)
-
-### What could go wrong + how the process handles it
-
-The complete predicted-failure register lives in
-[`failure_cases.md`](failure_cases.md). At a glance:
-
-| Failure mode | Mitigation |
-|---|---|
-| Item name not resolved | Follow-up question + closest-match candidates surfaced |
-| Stale inventory snapshot | Latest-prior fallback + `stale_data` warning + downgraded face validity |
-| Dairy-free heuristic miss | Heuristic labelled in warnings; allergen path forces review |
-| Sparse demand history | `low_sample_size` warning + forecast as secondary signal |
-| Missed promotion | Active promos surfaced separately in manager briefing |
-| Customisation drop | Prep notes render every customisation line; review required |
-| Inflated evidence score | Matched-term chips visible so reviewers can verify relevance |
-| False allergy escalation from RAG content | Fixed: face validity scans only safe signal sources |
+Human approval is part of the designed process — the system never moves a
+customer-facing recommendation or order to the next step without an explicit
+Approve, Edit, Reject + Rerun, or Escalate action from a barista or manager.
 
 ---
 
-## What BrewFlow AI Does
+## How to run
 
-| Role | Task | How |
-|---|---|---|
-| Manager | Pre-rush readiness check | `run_manager_readiness()` → automations + RAG |
-| Barista | Inventory-aware drink recommendation | `run_barista_recommendation()` → MCP tools + RAG |
-| Customer / Barista | Order building and validation | `run_order_builder()` → `build_and_validate_order` |
-| All | Order confirmation | `order_summary` skill → RAG confirmation SOP |
-| All | Human review and audit | Evidence package + review queue |
+### Prerequisites
 
----
+- Python 3.11+
+- [`uv`](https://docs.astral.sh/uv/) (package manager used throughout this repo)
 
-## The Connected Workflow
-
-```
-Manager Readiness (detect_rush → staffing → inventory → briefing)
-         ↓ barista_guidance
-Barista Recommendation (search_menu → check_inventory → RAG guidance)
-         ↓ top_candidates + selected_item
-Order Builder (parse order → validate → missing fields → follow-up)
-         ↓ structured_order
-Order Summary (customer confirmation + barista prep note)
-         ↓
-Human Review (evidence_package + review_queue + approve/edit/reject/escalate)
-```
-
----
-
-## What is a Skill vs Automation vs MCP Tool vs RAG Document?
-
-| Component | Where | What it does |
-|---|---|---|
-| **Skill** | `skills/*/SKILL.md` | AI instruction document — teaches the model how to use tools + evidence to respond to a user. Conversational, judgment-heavy. |
-| **Automation** | `automations/*/run_*.py` | Deterministic Python — no LLM. Reads CSVs, calculates thresholds, returns structured data. |
-| **MCP Tool** | `mcp_servers/brewflow_mcp_server.py` | Callable Python function with JSON I/O. Bridges automations and menu data for the orchestrator. |
-| **RAG Document** | `rag/knowledge_base/*.md` | Simulated internal SOP / policy / training guide. Retrieved by keyword scoring. |
-
----
-
-## Folder Structure
-
-| Folder | Contents |
-|---|---|
-| `data/raw/` | 9 finalized CSV files — read only, never modified |
-| `utils/` | data_loader, menu_matching, inventory_matching, workflow_common, evidence, **face_validity** (M04) |
-| `automations/` | 4 deterministic automations (inventory, staffing, demand, briefing) |
-| `mcp_servers/` | brewflow_mcp_server.py (6 tools) + example_server.py (reference) |
-| `rag/knowledge_base/` | 12 SOP/policy documents + EXAMPLE.md (reference) |
-| `rag/retrieval.py` | Deterministic keyword retrieval — no API keys |
-| `skills/` | 5 SKILL.md files (product_catalog, recommendation, order_builder, order_summary, workflow_orchestrator) |
-| `scripts/orchestrator.py` | 4 workflow functions returning UI-ready JSON (each carries a `face_validity` object) |
-| `tests/` | Local tests — no API keys required |
-| `ui/` | **Flask Operations Console (M04)** — `app.py`, `templates/`, `static/`. Six tabs over the live orchestrator. |
-
-> **Face validity (Milestone 04):** Every orchestrator response now includes
-> a top-level `face_validity` object — a deterministic, rule-based
-> plausibility check assembled from the existing `evidence_package`,
-> `review_queue`, `warnings`, and `user_input`. Face validity is an
-> evaluation/review layer (lives in `utils/face_validity.py`), **not** a
-> skill, MCP tool, or RAG tool. The future UI will render this in the
-> Evidence Center and Review Queue. See [`face_validity.md`](face_validity.md).
-
----
-
-## How to Run the UI (Operations Console)
+### Install dependencies
 
 ```bash
 uv sync
-uv run python ui/app.py            # http://127.0.0.1:5000
 ```
 
-> **Simulated branch, not real Starbucks operations.** The UI uses the
-> public Starbucks menu plus simulated operational CSVs (inventory,
-> staffing, sales forecast, orders, promotions). It is not connected to
-> any proprietary Starbucks data or system.
+### Start the web console
 
-The console has six tabs (**Full Workflow** — main demo path — plus
-Manager, Barista, Order Builder, Evidence Center, Review Queue) and an
-always-visible Audit Log footer. Every workflow call goes live to
-`scripts/orchestrator.py`. See [`ui/README.md`](ui/README.md) for full
-view-by-view docs.
+```bash
+uv run python ui/app.py
+```
 
-## How to Run Tests
+Open `http://127.0.0.1:5000` in any browser. The console serves the live
+Flask + Jinja UI against local CSV data — no external API calls and no LLM
+keys required.
+
+### Run the test suite
 
 ```bash
 uv run pytest tests/test_mcp_tools.py tests/test_rag_retrieval.py \
-  tests/test_brewflow_workflow.py tests/test_face_validity.py \
-  tests/test_ui_routes.py -v
+              tests/test_brewflow_workflow.py tests/test_face_validity.py \
+              tests/test_ui_routes.py -v
 ```
 
-## How to Run the Orchestrator from Python
+All 95 tests are local and deterministic. They pass without API keys.
+
+### Install skills into Claude Code
+
+```bash
+bash install.sh
+```
+
+This symlinks every `skills/*/SKILL.md` into `.claude/skills/` so Claude
+Code can load them. Restart your Claude Code session after running.
+
+---
+
+## Repository structure
+
+```
+mgta495-milestone04-Group-8/
+│
+├── data/
+│   └── raw/                          9 simulated operational CSVs (read-only)
+│       ├── starbucks_menu_full.csv   Public Starbucks menu catalog
+│       ├── store_inventory.csv       Per-store ingredient stock levels
+│       ├── ingredient_mapping.csv    Menu ingredient → inventory column map
+│       ├── item_name_mapping.csv     Natural-language → canonical item names
+│       ├── order_history.csv         Historical hourly order counts per store
+│       ├── staff_schedule.csv        Scheduled shifts per store per date
+│       ├── daily_sales_forecast.csv  Daily volume forecasts per store
+│       ├── promotion_margins.csv     Active promotions by store and date
+│       └── demo_scenarios.csv        Pre-built test scenarios (tests only)
+│
+├── skills/                           5 AI skills (SKILL.md-defined)
+│   ├── recommendation/               Ranks and explains drink recommendations
+│   ├── order_builder/                Parses and validates natural-language orders
+│   ├── order_summary/                Generates customer confirmation + prep notes
+│   ├── product_catalog/              Answers menu and product questions
+│   └── workflow_orchestrator/        Chains the end-to-end workflow
+│
+├── automations/                      4 deterministic Python automations (no LLM)
+│   ├── inventory_monitoring/         Classifies ingredient stock by alert level
+│   ├── staffing_gap_calculator/      Computes scheduled vs. required headcount
+│   ├── demand_rush_detection/        Classifies demand: low / moderate / high / very high
+│   └── manager_daily_briefing/       Combines all three into a pre-shift briefing
+│
+├── mcp_servers/
+│   └── brewflow_mcp_server.py        6 MCP-style tools with JSON envelopes:
+│                                       get_menu_item_info
+│                                       search_menu_by_preferences
+│                                       check_inventory_status
+│                                       detect_rush_period
+│                                       calculate_staffing_gap
+│                                       build_and_validate_order
+│
+├── rag/
+│   ├── knowledge_base/               12 simulated internal SOP / policy / training docs
+│   │   ├── barista_recommendation_guidelines.md
+│   │   ├── customization_policy.md
+│   │   ├── dietary_allergen_guidance.md
+│   │   ├── drink_quality_consistency_sop.md
+│   │   ├── inventory_substitution_sop.md
+│   │   ├── manager_pre_shift_checklist.md
+│   │   ├── new_barista_menu_training_guide.md
+│   │   ├── order_confirmation_standard.md
+│   │   ├── post_rush_manager_review_template.md
+│   │   ├── promotion_decision_policy.md
+│   │   ├── rush_hour_service_playbook.md
+│   │   └── service_recovery_policy.md
+│   └── retrieval.py                  Deterministic keyword-scoring retrieval (no vector DB,
+│                                     no API keys)
+│
+├── scripts/
+│   └── orchestrator.py               4 workflow functions exposed to the UI:
+│                                       run_manager_readiness()
+│                                       run_barista_recommendation()
+│                                       run_order_builder()
+│                                       run_full_workflow()
+│
+├── ui/
+│   ├── app.py                        Flask app — 7 routes, live orchestrator calls
+│   ├── templates/                    Jinja2 HTML templates
+│   └── static/                       CSS + vanilla JS (no framework, no build step)
+│
+├── utils/                            Shared Python helpers
+│   ├── data_loader.py                Loads and validates all 9 required CSVs at startup
+│   ├── menu_matching.py              Resolves natural-language item names to catalog entries
+│   ├── inventory_matching.py         Maps menu ingredients to inventory rows
+│   ├── workflow_common.py            Builds workflow envelopes, audit entries, tool wrappers
+│   ├── evidence.py                   Assembles evidence packages and quality scores
+│   └── face_validity.py              Deterministic plausibility check on every workflow output
+│
+├── tests/
+│   ├── test_mcp_tools.py             27 tests — all 6 MCP tools + data file existence
+│   ├── test_rag_retrieval.py         16 tests — RAG index, query scoring, doc exclusion
+│   ├── test_brewflow_workflow.py     23 tests — orchestrator envelope shape end-to-end
+│   ├── test_face_validity.py         15 tests — face-validity rules + RAG-leak regression
+│   ├── test_ui_routes.py             14 tests — Flask routes hit the live orchestrator
+│   └── results/                      Per-case test descriptions and run output
+│
+├── ai_process_design.md              Final process redesign — Mermaid workflow diagram +
+│                                     full explanation of what changed, what AI does,
+│                                     what humans control, and what the system needs
+├── ai_process_design.pdf             Printable version of the above
+├── human_review_plan.md              Human review and control table (7 workflow steps,
+│                                     3 explicit approval points, UI action mapping)
+├── evidence_and_sources.md           How data, documents, and tools are shown to the user;
+│                                     what happens when evidence is missing or weak
+├── estimates.md                      Before/after time, cost, and quality reasoning
+│                                     (reasoned ranges, not company facts)
+├── face_validity.md                  How the deterministic face-validity layer works,
+│                                     what triggers needs_review, and its limitations
+├── failure_cases.md                  8 predicted failure modes with test coverage and
+│                                     safety nets; includes the documented FC-08 fix
+├── test_report.md                    95-test results table, 3 failure patterns, 2 concrete
+│                                     before/after improvements, honest gaps
+├── install.sh                        Symlinks skills into .claude/skills/ for Claude Code
+└── pyproject.toml / uv.lock          Python project config and locked dependencies
+```
+
+---
+
+## What each component type does
+
+| Component | Where | What it does |
+|---|---|---|
+| **AI skill** | `skills/*/SKILL.md` | Natural-language generation — teaches the model how to use tools and evidence to respond. Used for recommendation drafts, order summaries, and confirmation messages. |
+| **Automation** | `automations/*/run_*.py` | Deterministic Python with no LLM. Reads CSVs, applies threshold logic, returns structured data. Used for inventory monitoring, staffing gap calculation, and demand classification. |
+| **MCP tool** | `mcp_servers/brewflow_mcp_server.py` | Callable Python function with JSON I/O. Bridges automations and menu data for the orchestrator. |
+| **RAG document** | `rag/knowledge_base/*.md` | Simulated internal SOP / policy / training guide. Retrieved by deterministic keyword scoring — no vector DB, no API keys. |
+| **Face validity** | `utils/face_validity.py` | Deterministic plausibility check assembled from the evidence package, review queue, warnings, and user input. Not an LLM judge. Returns a structured verdict used by the UI Evidence Center and Review Queue. |
+
+---
+
+## Workflow-to-component map
+
+| Workflow step | Component type | File / name |
+|---|---|---|
+| Inventory status and alerts | Automation + MCP tool | `automations/inventory_monitoring/`, `brewflow_mcp_server.py · check_inventory_status` |
+| Staffing gap calculation | Automation + MCP tool | `automations/staffing_gap_calculator/`, `brewflow_mcp_server.py · calculate_staffing_gap` |
+| Rush / demand detection | Automation + MCP tool | `automations/demand_rush_detection/`, `brewflow_mcp_server.py · detect_rush_period` |
+| Manager pre-shift briefing | Automation (orchestrates the three above) | `automations/manager_daily_briefing/` |
+| Menu scoring against preferences | MCP tool | `brewflow_mcp_server.py · search_menu_by_preferences` |
+| Drink recommendation (natural language) | AI skill | `skills/recommendation/SKILL.md` |
+| Order parsing and validation | MCP tool | `brewflow_mcp_server.py · build_and_validate_order` |
+| Order confirmation and prep notes | AI skill | `skills/order_summary/SKILL.md` |
+| Policy / SOP / training retrieval | RAG | `rag/retrieval.py` → `rag/knowledge_base/*.md` |
+| Evidence assembly and quality scoring | Utility | `utils/evidence.py` |
+| Plausibility check on every run | Utility | `utils/face_validity.py` |
+| End-to-end workflow orchestration | Orchestrator | `scripts/orchestrator.py` |
+| Human review and audit trail | UI + orchestrator | `ui/app.py` → `POST /api/review_action`, `GET /api/audit_log` |
+
+---
+
+## The connected workflow
+
+```
+Manager Readiness
+  detect_rush_period → calculate_staffing_gap → check_inventory_status
+  → run_manager_daily_briefing → RAG (checklist, playbook, promotions)
+         ↓ barista_guidance
+
+Barista Recommendation
+  search_menu_by_preferences → check_inventory_status
+  → RAG (recommendation guidelines, allergen guidance, rush playbook)
+  → recommendation skill
+         ↓ top_candidates + selected_item
+
+Order Builder
+  build_and_validate_order → check_inventory_status
+  → RAG (customization policy, order confirmation standard, quality SOP)
+  → order_summary skill
+         ↓ structured_order + prep_notes
+
+Human Review
+  evidence_package + face_validity + review_queue
+  → Approve / Edit / Reject + Rerun / Escalate
+         ↓
+
+Audit Log (every step + every human action recorded)
+```
+
+---
+
+## Key design principles
+
+| Principle | Where it is enforced |
+|---|---|
+| **Human approval is required on every customer-facing output** | `review_required = True` always set on recommendation and order steps; face-validity returns `needs_review` as the designed state for customer-facing flows |
+| **Allergy and medical language always escalates** | `_ALLERGY_RE` in `orchestrator.py` + `_ALLERGY_PATTERN` / `_MEDICAL_PATTERN` in `face_validity.py`; status forced to `needs_review`, action forced to `escalate` |
+| **Drinks are prepared individually for quality consistency** | Phrase appears verbatim in every prep note; retrieved from `drink_quality_consistency_sop.md` via RAG; asserted by `test_order_builder_prep_notes_include_individually` |
+| **All operational data is simulated** | Stated in data README files; simulated-data chip visible in UI top bar; called out in every deliverable document |
+| **No external API calls at runtime** | All workflows use local Python + CSVs + Jinja UI; all 95 tests run offline without any keys |
+| **Evidence is always visible to the reviewer** | Every run produces an `evidence_package`; the UI Evidence Center surfaces tool outputs, RAG docs (with matched terms and snippets), assumptions, warnings, quality score, and face-validity card |
+
+---
+
+## User interface
+
+The UI is a single-page Flask + Jinja + vanilla JS app with six tabs and an
+always-visible Audit Log footer. No frontend framework. No build step.
+
+| Tab | What it does |
+|---|---|
+| **Full Workflow** *(default — main demo path)* | Chains all three workflows: manager readiness → barista recommendation → order builder. Includes quick-start buttons that pre-fill the form. |
+| **Manager View** | Pre-shift readiness check — rush risk, staffing status, inventory alerts, barista guidance, recommended actions. |
+| **Barista View** | Drink recommendation — ranked candidates with reason codes, inventory cautions, RAG guidance, allergy flag if detected. |
+| **Order Builder** | Order parsing and validation — structured fields, missing-field detection, follow-up question, prep notes. |
+| **Evidence Center** | Five sub-tabs: Tool / Data outputs, RAG documents (with matched terms and snippets), Assumptions, Warnings, and Quality + Face Validity. |
+| **Review Queue** | All items flagged for human review with filter chips (All / Pending / Approved / Escalated) and four action buttons: Approve, Edit, Reject + Rerun, Escalate. |
+| **Audit Log** | Collapsible footer drawer — combines orchestrator audit entries and UI-side review actions. Every click is logged. |
+
+---
+
+## How to use the orchestrator from Python
 
 ```python
 from scripts.orchestrator import run_manager_readiness, run_full_workflow
@@ -190,9 +291,11 @@ result = run_manager_readiness("SD001", "2024-01-15", 8)
 print(result["final_output"]["readiness_summary"])
 print(result["final_output"]["recommended_actions"])
 
-# Full workflow
+# Full end-to-end workflow
 result = run_full_workflow(
-    store_id="SD001", date="2024-01-15", hour=8,
+    store_id="SD001",
+    date="2024-01-15",
+    hour=8,
     customer_request="something cold and sweet",
     raw_order="Grande iced caramel macchiato with oat milk",
     preferences={"temperature": "cold"},
@@ -202,191 +305,82 @@ print(result["status"], len(result["steps"]))
 
 ---
 
-## Milestone 02 Coverage
+## Milestone 04 deliverables index
 
 | Deliverable | File |
 |---|---|
-| product_catalog skill | `skills/product_catalog/SKILL.md` |
-| recommendation skill | `skills/recommendation/SKILL.md` |
-| order_builder skill | `skills/order_builder/SKILL.md` |
-| order_summary skill | `skills/order_summary/SKILL.md` |
-| inventory_monitoring automation | `automations/inventory_monitoring/run_inventory_monitoring.py` |
-| staffing_gap_calculator automation | `automations/staffing_gap_calculator/run_staffing_gap_calculator.py` |
-| demand_rush_detection automation | `automations/demand_rush_detection/run_demand_rush_detection.py` |
-| manager_daily_briefing automation | `automations/manager_daily_briefing/run_manager_daily_briefing.py` |
-
-## Milestone 03 Coverage
-
-| Deliverable | File |
-|---|---|
-| Connected workflow chain | `scripts/orchestrator.py` (4 functions) |
-| `get_menu_item_info` MCP tool | `mcp_servers/brewflow_mcp_server.py` |
-| `search_menu_by_preferences` MCP tool | `mcp_servers/brewflow_mcp_server.py` |
-| `check_inventory_status` MCP tool | `mcp_servers/brewflow_mcp_server.py` |
-| `detect_rush_period` MCP tool | `mcp_servers/brewflow_mcp_server.py` |
-| `calculate_staffing_gap` MCP tool | `mcp_servers/brewflow_mcp_server.py` |
-| `build_and_validate_order` MCP tool | `mcp_servers/brewflow_mcp_server.py` |
-| RAG retrieval | `rag/retrieval.py` + 12 docs in `rag/knowledge_base/` |
-| Workflow handoffs | `scripts/orchestrator.py::run_full_workflow()` |
+| Final process redesign (workflow diagram + explanation) | [`ai_process_design.md`](ai_process_design.md) / [`ai_process_design.pdf`](ai_process_design.pdf) |
+| Human review and control plan | [`human_review_plan.md`](human_review_plan.md) |
+| User interface | [`ui/`](ui/) — run with `uv run python ui/app.py` |
+| Evidence and source use | [`evidence_and_sources.md`](evidence_and_sources.md) |
+| Time, cost, and quality reasoning | [`estimates.md`](estimates.md) |
+| Face validity explanation | [`face_validity.md`](face_validity.md) |
+| Failure cases register | [`failure_cases.md`](failure_cases.md) |
+| Test report (results, patterns, before/after) | [`test_report.md`](test_report.md) |
+| Test files | [`tests/`](tests/) |
 
 ---
 
-## Notes
+## Answering the grader questions
 
-- UI will be built later in `ui/` — not part of this milestone.
-- All outputs are generated from live data/functions — no canned demo responses.
-- Professor starter examples (`mcp_servers/example_server.py`, `rag/knowledge_base/EXAMPLE.md`,
-  `.claude/commands/`) are preserved as reference-only.
-- `tests/test_workflow.py` (DeepEval) and `tests/utils/` (OAuth) require API keys — run with `-m integration`.
+**What business process did the team redesign?**
+Daily operations and order fulfillment at a simulated Starbucks branch —
+specifically the manager's pre-shift readiness check, the barista's drink
+recommendation conversation, and the order validation and confirmation flow.
 
----
+**What does the AI coworker actually do?**
+It runs inventory, staffing, and demand lookups; retrieves relevant internal
+SOPs and training guides; scores and ranks menu items against customer
+preferences; parses natural-language orders into structured fields; and
+generates a customer-facing confirmation with barista prep notes. All
+natural-language synthesis is performed by the AI skills in `skills/`.
 
-# Milestone 04 — Course Template (Preserved for Reference) It
-builds on the Milestone 03 template (skills, MCP tools, RAG) and adds the
-pieces specific to M04: a real user interface, an explicit human-review
-plan, evidence/source displays, time/cost/quality reasoning, predicted
-failure cases, and an automated DeepEval test suite.
+**What does the human still control?**
+Every customer-facing recommendation requires a barista Approve, Edit,
+Reject + Rerun, or Escalate action before delivery. Allergy or medical
+language always routes to escalate — the human verifies against the physical
+ingredient label before serving. Order finalisation is always a human action.
+Drink preparation is always done individually by the barista.
 
-Your assignment brief is in [`milestone04.qmd`](milestone04.qmd). The six
-graded deliverables are:
+**What evidence can the human inspect?**
+The Evidence Center surfaces: each MCP tool's structured output, every
+retrieved RAG document (filename, title, snippet, matched terms, score),
+assumptions the workflow made, warnings it raised, and a face-validity card
+with status, confidence, anchors, supporting reasons, concerns, and
+recommended action.
 
-1. **Final Process Redesign** — updated workflow diagram + 1–2 page explanation.
-2. **Human Review and Control Plan** — table covering ≥6 process steps.
-3. **User Interface** — at least 4 screens (start, AI work, evidence, review).
-4. **Evidence and Source Use** — how RAG/tool output is shown to the user.
-5. **Time, Cost, and Quality Reasoning** — before/after estimates with assumptions.
-6. **Testing AI Performance** — 5+ predicted failures + 8–12 DeepEval test cases with results.
+**What could go wrong, and how is it handled?**
+See [`failure_cases.md`](failure_cases.md) for the full 8-case register. The
+most significant fix made during development: the face-validity layer used to
+falsely escalate benign requests because retrieved RAG docs (e.g.
+`dietary_allergen_guidance.md`) contained the word "allergen". Fixed by
+scanning only safe signal sources (`user_input`, `warnings`, `review_queue`
+labels) and not the stringified final output. Two regression tests now lock
+this in.
 
-A final presentation pulls these together on **June 4**. There is also a
-**May 28 checkpoint** for the RAG + current UI.
+**What improvement does the team expect, based on stated assumptions?**
+Using a $25–$35/hour educational labour assumption and reasoned time ranges,
+we estimate total per-case elapsed time drops from 33–72 minutes (analogue)
+to 15–34 minutes (AI-supported) — a plausible 30–55% reduction in lookup-
+heavy phases. Human review time is preserved by design and partially
+increases. See [`estimates.md`](estimates.md) for the full step-by-step
+breakdown and honest gaps.
 
----
+**Why are the analysis and AI results plausible in the real-world context?**
+The largest time reductions are in the most lookup-heavy steps (manager
+readiness, post-rush review). Steps that are conversation-bound (customer
+intake) or safety-critical (allergen handling) show little or no reduction.
+Cost estimates use explicitly stated educational assumptions with no claim
+about real Starbucks costs. No claim is made about drink prep speed, allergen
+incident rates, or customer satisfaction — those would require real-world
+data. See [`face_validity.md`](face_validity.md) for the full plausibility
+argument.
 
-## Setup
-
-```bash
-uv sync                                       # installs deps into .venv (incl. deepeval)
-cp .env.example .env && $EDITOR .env          # add TRITONAI_API_KEY
-bash install.sh                               # registers skills with Claude Code
-                                              #   (run again after you add a skill)
-```
-
-If you also want the MCP example to be invokable from Claude Code:
-
-```bash
-uv run mcp dev mcp_servers/example_server.py  # opens the MCP inspector
-```
-
-`uv run pytest` should pass on a fresh clone.
-
----
-
-## Folder map
-
-| Folder | What lives here |
-| --- | --- |
-| [`skills/`](skills/README.md) | LLM-based skills (one folder per skill; each has `SKILL.md` + `scripts/`) |
-| [`automations/`](automations/README.md) | Deterministic Python steps (no LLM); same CLI contract as skills |
-| [`mcp_servers/`](mcp_servers/README.md) | MCP servers that expose your skills + data as tools |
-| [`rag/`](rag/README.md) | Proprietary knowledge base + retrieval code |
-| [`ui/`](ui/README.md) | User interface for the workflow (≥4 screens) — **new in M04** |
-| [`scripts/`](scripts/README.md) | Orchestrator + glue scripts |
-| [`utils/`](utils/README.md) | Shared helpers (`connect.py` for LLM calls is already here) |
-| [`data/`](data/README.md) | `raw/`, `processed/`, `working/`, `dictionaries/` data folders |
-| [`tests/`](tests/README.md) | pytest + **DeepEval** test cases for AI performance — extended in M04 |
-| [`presentation_slides/`](presentation_slides/README.md) | Final presentation materials — **new in M04** |
-
-Top-level deliverable documents (fill these in):
-
-- [`human_review_plan.md`](human_review_plan.md) — table of human review/control points
-- [`evidence_and_sources.md`](evidence_and_sources.md) — how data/documents/tools are shown
-- [`estimates.md`](estimates.md) — time, cost, and quality assumptions
-- [`failure_cases.md`](failure_cases.md) — predicted failures and process handling
-- [`test_report.md`](test_report.md) — DeepEval results, failure patterns, before/after
-
-Add your workflow diagram as `ai_process_design.pdf` at the repo root.
-
-Top-level files you should not need to edit:
-
-- `install.sh` — auto-discovers every `skills/*/SKILL.md` and symlinks it into `.claude/skills/`
-- `conftest.py` — loads `.env` before pytest collects
-- `.env.example` — copy to `.env` and add your key
-- `pyproject.toml` — uv-managed dependencies; add to it with `uv add <pkg>`
-- `.mcp.json` — registers your MCP servers with Claude Code
-
----
-
-## What's new in M04 (vs M03)
-
-M03 gave you a working orchestrator with skills, MCP tools, and RAG. M04
-asks: *if a real person used this every day, what would the interaction
-look like, and how would you know it was working?* That breaks into four
-new pieces of work:
-
-### 1. A real UI (`ui/`)
-
-The orchestrator's CLI is not enough. Build at least four screens:
-
-1. **Start screen** (carried from M03, refined) — operator selects/enters the case.
-2. **AI work screen** (carried from M03, refined) — operator watches the AI produce output.
-3. **Evidence screen** (new) — structured display of retrieved docs, tool output, data rows.
-4. **Review screen** (new) — approve / edit / reject / rerun / escalate, with each action wired to a real outcome.
-
-See [`ui/README.md`](ui/README.md) for tool suggestions and the screen contract.
-
-### 2. Human review plan (`human_review_plan.md`)
-
-A table that names ≥6 workflow steps, what the AI does, what the human
-does, whether approval is required, what could go wrong, and what happens
-when it does. At least 1–2 rows must be explicit review/approval points.
-
-### 3. Evidence and source use (`evidence_and_sources.md`)
-
-A short doc explaining what data/documents/tools the AI uses, how the user
-sees the evidence, and what happens when evidence is missing or weak.
-
-### 4. Time, cost, and quality estimates (`estimates.md`)
-
-Two tables: a per-step before/after time table (≥5 rows) and a summary
-table. Use **reasoned assumptions and ranges** — not invented company data.
-
-### 5. Failure cases + DeepEval tests (`failure_cases.md`, `tests/`, `test_report.md`)
-
-- List **≥5 realistic failure cases** with consequence and handling.
-- Build a **DeepEval test set of 8–12 cases**, run it, and write up the
-  results, the 3 most common failure patterns, and one before/after fix.
-
-See [`tests/README.md`](tests/README.md) for the DeepEval starter and
-[`tests/test_workflow.py`](tests/test_workflow.py) for a runnable example.
-
----
-
-## Timeline
-
-- **May 28 (checkpoint):** RAG + current UI demo. Two teams selected to share.
-- **June 4 (final):** All deliverables + final presentation. Push to GitHub before class.
-
----
-
-## Before you submit
-
-- [ ] Workflow diagram + 1–2 page explanation in `ai_process_design.pdf`.
-- [ ] `human_review_plan.md` covers ≥6 steps with ≥1–2 review points.
-- [ ] `ui/` has at least 4 working screens.
-- [ ] `evidence_and_sources.md` answers all 5 questions in the brief.
-- [ ] `estimates.md` has the per-step table (≥5 rows) and the summary table.
-- [ ] `failure_cases.md` lists ≥5 realistic failures.
-- [ ] `tests/test_workflow.py` runs 8–12 DeepEval cases and writes results to `tests/results/`.
-- [ ] `test_report.md` summarizes results, top-3 failure patterns, and one before/after fix.
-- [ ] `uv run pytest` is green.
-- [ ] `presentation_slides/` contains the final deck.
-
----
-
-## Reading the reference repo
-
-The `customer-ticket-process/` reference repo your instructor shared is
-still the worked example for skills, MCP, RAG, and the orchestrator. M04
-adds new pieces (UI, review plan, estimates, DeepEval) that are
-project-specific — there is no reference to copy from. Start small,
-make it work, then make it better.
+**How did the team test the prototype, and what did the tests reveal?**
+95 local deterministic tests (no API keys). Three dominant failure patterns
+surfaced: input ambiguity (missing fields, fuzzy item names), missing or weak
+evidence (out-of-range dates, sparse history), and over-triggered safety
+signals (the RAG-content false escalation). Both headline failure patterns
+drove concrete fixes that are now locked in by regression tests. See
+[`test_report.md`](test_report.md) for the full results table, before/after
+comparisons, and honest gaps.

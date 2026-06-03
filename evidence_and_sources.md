@@ -81,7 +81,7 @@ The orchestrator (`scripts/orchestrator.py`) returns a structured `evidence_pack
 - **Review queue**: items flagged for human review appear in `review_queue` with risk level and a one-line reason.
 - **Evidence quality score**: `evidence.py` computes a 0.0–1.0 quality score based on the number of sources, RAG coverage, and tool confirmation. A score below 0.4 triggers a `low_evidence_quality` warning.
 
-The planned UI Evidence screen (M04) will render this JSON as:
+The live UI Evidence Center renders this JSON as:
 - A collapsible panel per RAG doc with highlighted matched terms
 - A table of tool outputs (inventory rows, staffing numbers, demand level)
 - A color-coded quality badge (green ≥ 0.7, yellow 0.4–0.7, red < 0.4)
