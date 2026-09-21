@@ -4,7 +4,7 @@ All tests run locally with no external API keys.
 
 Coverage:
   * Direct unit tests on `generate_face_validity_check` for the four headline
-    scenarios called out in the Milestone 04 brief.
+    headline safety and evidence scenarios.
   * Orchestrator-integration tests confirming that every workflow response
     now carries a properly-structured `face_validity` object.
 """

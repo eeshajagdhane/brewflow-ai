@@ -1,11 +1,8 @@
 # BrewFlow AI — Final Process Redesign
 
-**Project:** BrewFlow AI: Starbucks Branch Daily Operations and Order
-Fulfillment
-**Milestone:** 04
-**Authors:** Group 8 (MGTA 495 GenAI for Business, Spring 2026)
+**Project:** BrewFlow AI — café daily operations and order fulfillment
 
-This document is the Milestone 04 "Final Process Redesign" deliverable.
+This is the process redesign for the running system.
 The companion file `ai_process_design.pdf` is the printable version.
 
 ---
@@ -209,7 +206,7 @@ Per shift, the manager has:
 ## File map (where each piece lives)
 
 ```
-mgta495-milestone04-Group-8/
+brewflow-ai/
 ├── data/raw/                        9 simulated CSVs (read-only)
 ├── utils/                           Shared helpers + face_validity layer
 ├── automations/                     4 deterministic automations

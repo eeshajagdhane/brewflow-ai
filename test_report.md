@@ -1,6 +1,6 @@
 # BrewFlow AI — Test Report
 
-This document covers Milestone 04's "Testing AI Performance" deliverable.
+This document records how BrewFlow AI was tested and what the suite covers.
 
 ---
 
@@ -172,7 +172,7 @@ edits during development, three patterns dominate:
 ## 7. What would improve with more time
 
 These are the honest next steps an actual production deployment would
-need to take. None of them are blockers for the Milestone 04 prototype,
+need to take. None of them are blockers for the current prototype,
 but each would close a real gap.
 
 - **More realistic inventory simulation.** The current

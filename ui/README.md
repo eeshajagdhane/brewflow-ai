@@ -1,7 +1,6 @@
 # `ui/` — BrewFlow AI Operations Console
 
-> **Milestone 04 prototype interface.**
-> Built with Flask + Jinja2 + vanilla JS.
+> Flask + Jinja2 + vanilla JS console over the orchestrator.
 > Every workflow call goes live to `scripts/orchestrator.py` — there are
 > **no canned outputs, no mocked data, and no external API calls**.
 
@@ -39,7 +38,7 @@ The console is a thin layer over four existing orchestrator functions:
 
 Each workflow response is returned verbatim, including `final_output`,
 `evidence_package`, `review_queue`, `review_actions`, `audit_log`, `warnings`,
-`assumptions`, and the Milestone 04 **`face_validity`** object.
+`assumptions`, and the **`face_validity`** object.
 
 ---
 
@@ -93,7 +92,7 @@ candidates if any, face-validity status, and four action buttons:
 - **Escalate** — opens a modal for an escalation note, then records
 
 Review actions update UI state and append to the Audit Log. They do not
-write to any database (per Milestone 04 scope).
+write to any database. Persistence is a later step.
 
 ### Audit Log (footer)
 Always visible. Combines:
@@ -159,8 +158,8 @@ human approval is part of the designed process.
 - **Review Queue filter** — All / Pending / Approved / Escalated chips
 - **Audit Log** — **collapsible drawer pinned to the bottom** (default
   collapsed but always visible — `52px` bar showing entry count and
-  chevron; expands to `40vh` with search input). Auditability is
-  Milestone-04-critical so it can't be tucked away.
+  chevron; expands to `40vh` with search input). The log stays on screen
+  so a reviewer can see every tool call and every human action.
 
 No build step, no JS framework — just `fetch()` to the routes and vanilla
 DOM. Edit `static/style.css` or `static/app.js` and refresh.

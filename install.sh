@@ -43,9 +43,8 @@ for skill_md in "$SKILLS_DIR"/*/SKILL.md; do
 done
 
 if [ "$installed" -eq 0 ]; then
-  echo "no skills found under $SKILLS_DIR yet — this is normal for a fresh"
-  echo "milestone04 template. Add a skill (folder with a SKILL.md inside) and"
-  echo "re-run this script."
+  echo "no skills found under $SKILLS_DIR yet. Add a folder with a SKILL.md"
+  echo "inside and re-run this script."
   exit 0
 fi
 

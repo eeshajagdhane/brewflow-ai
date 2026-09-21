@@ -1,4 +1,4 @@
-"""BrewFlow AI Orchestrator — Milestone 03 connected workflow.
+"""BrewFlow AI Orchestrator — connected workflow.
 
 Chains automations, MCP tools, and RAG retrieval into four workflow functions
 that return UI-ready structured JSON.  No LLM calls are made here.

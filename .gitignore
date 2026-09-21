@@ -7,6 +7,7 @@ __pycache__
 .claude/.last-test-time
 .claude/settings.local.json
 .claude/usage-log/.github-user
+.claude/usage-log/*.jsonl
 .claude/bin/
 
 # Python / uv
@@ -16,6 +17,12 @@ __pycache__
 
 # Secrets
 .env
+
+# Course presentation (not part of the public repo)
+*.pptx
+.claude/skills/check-faq-resolution/
+.claude/skills/draft-faq-candidate/
+.claude/skills/investigate-specialist-solution/
 
 # Quarto
 *_files/

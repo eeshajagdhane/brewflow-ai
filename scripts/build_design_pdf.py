@@ -1,7 +1,7 @@
 """Build `ai_process_design.pdf` from `ai_process_design.md`.
 
 This is a *documentation build script*, not part of the live BrewFlow AI
-backend. It reads the Milestone 04 process-design markdown and emits a
+backend. It reads the process-design markdown and emits a
 plain-text styled PDF using `fpdf2` (pure Python, no native binaries).
 
 Run it without adding a permanent dependency:
@@ -138,7 +138,7 @@ class DesignPDF(FPDF):
         self.set_y(-12)
         self.set_font("Helvetica", "I", 7)
         self.set_text_color(150, 150, 150)
-        self.cell(0, 8, "Milestone 04 - Group 8 - MGTA 495 GenAI for Business",
+        self.cell(0, 8, "BrewFlow AI - process redesign",
                   align="C")
         self.set_text_color(0, 0, 0)
 
@@ -156,10 +156,10 @@ def render(md_path: Path, pdf_path: Path) -> None:
     pdf.ln(14)
     pdf.set_font("Helvetica", "", 12)
     pdf.set_text_color(80, 80, 80)
-    pdf.cell(0, 8, "Final Process Redesign  -  Milestone 04", align="C")
+    pdf.cell(0, 8, "Process redesign", align="C")
     pdf.ln(8)
     pdf.set_font("Helvetica", "I", 9)
-    pdf.cell(0, 6, "Group 8  -  MGTA 495 GenAI for Business",
+    pdf.cell(0, 6, "Built with teammates",
              align="C")
     pdf.ln(20)
     pdf.set_text_color(0, 0, 0)

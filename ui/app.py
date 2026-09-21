@@ -1,4 +1,4 @@
-"""BrewFlow AI Operations Console — Flask UI (Milestone 04).
+"""BrewFlow AI Operations Console — Flask UI.
 
 A thin web layer over the existing BrewFlow orchestrator.  Every workflow
 route calls the *live* orchestrator function in `scripts.orchestrator` and

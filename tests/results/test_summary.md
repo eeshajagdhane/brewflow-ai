@@ -1,6 +1,6 @@
 # BrewFlow AI — Test Summary
 
-Test cases mapped to Milestone 04 grading needs.
+Test cases for the local suite.
 All tests run locally with no external API keys.
 
 ## Test Execution

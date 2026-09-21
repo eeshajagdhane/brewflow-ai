@@ -1,1 +1,0 @@
-../../../skills/check-faq-resolution/SKILL.md

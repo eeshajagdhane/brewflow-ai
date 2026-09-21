@@ -1,7 +1,7 @@
 # BrewFlow AI — Data Layer Reference
 
 > **⚠️ Important notice**
-> This repository does not use proprietary Starbucks internal data. Operational data is simulated for educational prototyping purposes.
+> This repository does not use proprietary Starbucks internal data. Operational data is simulated.
 
 ---
 

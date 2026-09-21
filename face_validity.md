@@ -10,7 +10,7 @@ completed workflow output. It answers one question:
 > review and act on?"*
 
 It is **not** a correctness proof. It is **not** an LLM judge. It is a
-rules-based summary that the future UI uses to render an at-a-glance
+rules-based summary that the UI uses to render an at-a-glance
 plausibility card.
 
 ## 2. How BrewFlow AI checks face validity

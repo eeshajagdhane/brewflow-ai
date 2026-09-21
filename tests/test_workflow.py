@@ -1,4 +1,4 @@
-"""DeepEval AI-performance tests for the BrewFlow AI Milestone 04 workflow.
+"""DeepEval AI-performance tests for the BrewFlow AI workflow.
 
 This is the *customised* version of the starter file. `run_workflow()`
 calls the real BrewFlow orchestrator (`scripts.orchestrator.run_full_workflow`)

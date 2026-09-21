@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "milestone04-example": {
+    "brewflow-example": {
       "command": "uv",
       "args": ["run", "python", "-m", "mcp_servers.example_server"]
     }

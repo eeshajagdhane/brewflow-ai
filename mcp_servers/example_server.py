@@ -18,7 +18,7 @@ from mcp.server.fastmcp import FastMCP
 
 
 def build_server() -> FastMCP:
-    server = FastMCP("milestone04-example")
+    server = FastMCP("brewflow-example")
 
     @server.resource("hello://world")
     def hello_resource() -> str:
@@ -30,15 +30,13 @@ def build_server() -> FastMCP:
           - dictionaries://{name}                  (reference enumerations)
           - rag://kb                               (the proprietary KB index)
         """
-        return "Hello from milestone04/mcp_servers/example_server.py — replace me."
+        return "Hello from mcp_servers/example_server.py — replace me."
 
     @server.tool()
     def echo(text: str) -> dict:
         """Return the same text back so you can confirm tool calls work.
 
-        Replace this with a tool that wraps one of your skills or
-        automations (see ``customer-ticket-process/mcp_servers/skills_server.py``
-        for the subprocess-wrap pattern).
+        Replace this with a tool that wraps one of the skills or automations.
         """
         return {"status": "ok", "echoed": text}
 

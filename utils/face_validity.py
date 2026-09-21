@@ -1,4 +1,4 @@
-"""BrewFlow AI — deterministic face-validity layer (Milestone 04).
+"""BrewFlow AI — deterministic face-validity layer.
 
 Face validity is **not** a skill, MCP tool, or RAG tool.  It is an
 evaluation/review layer that inspects an assembled workflow output and

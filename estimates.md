@@ -1,8 +1,8 @@
 # Time, Cost, and Quality Reasoning
 
 This document presents the reasoned before/after estimates for BrewFlow
-AI's redesigned workflow. It is written for Milestone 04's "Time, Cost,
-and Quality" deliverable.
+AI's redesigned workflow. Time, cost, and quality estimates are reasoned
+ranges, not measured store results.
 
 ---
 

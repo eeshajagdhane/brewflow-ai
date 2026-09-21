@@ -33,8 +33,8 @@ advisory but still queue for review when the underlying tool returns a
 | **Reject + Rerun** | Same locations | Records `user_review · reject_rerun · <target>`; card gets red left border | Run the workflow again with revised inputs |
 | **Escalate** | Same locations | Opens modal for an escalation reason; records `user_review · escalate · <target> · <reason>`; card gets amber left border | Routed to a senior manager / off-tool follow-up |
 
-## Notes for graders
+## Notes
 
-- For **customer-facing workflows** (barista recommendation, order builder, order summary, full workflow), `status = needs_review` is the *designed* state, not a failure. Human approval is part of the documented process and is never bypassed.
+- For **customer-facing workflows** (barista recommendation, order builder, order summary, full workflow), `status = needs_review` is the *designed* state, not a failure. Human approval is part of the process and is never bypassed.
 - Every review-queue item carries enough context (reason, follow-up question if any, candidate alternatives, face-validity verdict) for a person to act on it without re-reading the original input.
-- Review actions are kept in an in-process audit list (no database) per Milestone 04 scope. A production deployment would persist these to a database for full traceability.
+- Review actions are kept in an in-process audit list (no database). A production deployment would persist these for full traceability.
